@@ -1,0 +1,69 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&family=Roboto&family=Source+Code+Pro&display=swap");
+/* Fondo general */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0f0f19;
+  overflow: hidden;
+  font-family: monospace;
+  color: white;
+}
+
+/* Contenedor principal centrado */
+.align {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0f0f19;
+  transition: transform 1s ease, opacity 1s ease;
+}
+
+/* Animación de salida (cuando se cambia de pantalla) */
+.align.hide {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Texto del título */
+#title {
+  font-size: 3.5em;
+  border: 3px solid white;
+  padding: 15px 40px;
+  letter-spacing: 2px;
+  margin: 0;
+  background-color: transparent;
+}
+
+/* Texto "click to start" */
+#start {
+  margin-top: 25px;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: white;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 1.2s ease forwards;
+  animation-delay: 1.8s; /* Aparece después de 1.8 segundos */
+}
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto hover */
+#start:hover {
+  opacity: 0.7;
+}

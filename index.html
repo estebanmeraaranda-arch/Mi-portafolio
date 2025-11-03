@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Portafolio 3D</title>
+
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="MenuPrincipal/Menu.css" />
 
     <script type="importmap">
       {
@@ -17,8 +19,22 @@
   </head>
 
   <body>
-    <canvas id="scene"></canvas>
-    <script type="module" src="main.js"></script>
-    <script type="module" src="fireflies.js"></script>
+    <!-- 🟣 SCREEN 1: MENÚ PRINCIPAL -->
+    <div id="screen1" class="screen active">
+      <div class="align" id="align">
+        <h1 id="title">BIENVENIDO</h1>
+        <p id="start">click to start</p>
+      </div>
+    </div>
+
+    <!-- 🔵 SCREEN 2: ESCENA PRINCIPAL -->
+    <div id="screen2" class="screen hidden">
+      <canvas id="scene"></canvas>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="MenuPrincipal/Menu.js"></script>
+    <script type="module" src="ScreenManager/ScreenManager.js"></script>
+    <script type="module" src="Audio/Musicmanager.js"></script>
   </body>
 </html>
