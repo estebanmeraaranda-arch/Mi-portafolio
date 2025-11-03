@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+
 // === ESCENA PRINCIPAL ===
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e0e1a);
@@ -290,3 +291,5 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+export { scene, camera, renderer };
+window.scene = scene;
