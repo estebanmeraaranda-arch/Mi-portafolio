@@ -92,22 +92,29 @@ const keys = {};
 let velocity = new THREE.Vector3();
 const walkSpeed = 0.04;
 const runSpeed = 0.07;
-document.addEventListener('keydown', (e) => keys[e.code] = true);
-document.addEventListener('keyup', (e) => keys[e.code] = false);
+
+// Handlers are named so we can remove them on destroy
+function keydownHandler(e) { keys[e.code] = true; }
+function keyupHandler(e) { keys[e.code] = false; }
+document.addEventListener('keydown', keydownHandler);
+document.addEventListener('keyup', keyupHandler);
 
 // === CÁMARA ===
 let pitch = 0;
 let yaw = Math.PI;
 let isLocked = false;
-document.body.addEventListener('click', () => document.body.requestPointerLock());
-document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === document.body; });
-document.addEventListener('mousemove', (event) => {
+function bodyClickHandler() { document.body.requestPointerLock(); }
+function pointerlockchangeHandler() { isLocked = document.pointerLockElement === document.body; }
+function mousemoveHandler(event) {
   if (!isLocked) return;
   const sensitivity = 0.002;
   yaw -= event.movementX * sensitivity;
   pitch -= event.movementY * sensitivity;
   pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
-});
+}
+document.body.addEventListener('click', bodyClickHandler);
+document.addEventListener('pointerlockchange', pointerlockchangeHandler);
+document.addEventListener('mousemove', mousemoveHandler);
 
 // === RAYCASTERS ===
 const downRay = new THREE.Raycaster();
@@ -120,7 +127,14 @@ function getWorldNormal(hit) {
 
 // === ANIMATE ===
 function animate() {
-  requestAnimationFrame(animate);
+  // store the RAF id so we can cancel when destroying
+  window.gameAnimId = requestAnimationFrame(animate);
+
+  // Si el juego está pausado, dibujamos el frame actual y no actualizamos la lógica
+  if (window.gamePaused) {
+    renderer.render(scene, camera);
+    return;
+  }
 
   if (penguin && terrain) {
     const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
@@ -190,16 +204,53 @@ function animate() {
 }
 animate();
 
-// === AJUSTE VENTANA ===
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+// === CLEANUP / DESTROY ===
+// Expose a destroy function to stop the loop and free GL resources
+window.destroyGame = function destroyGame() {
+  try {
+    if (window.gameAnimId) cancelAnimationFrame(window.gameAnimId);
+  } catch (e) { /* ignore */ }
+
+  // Remove event listeners
+  try { document.removeEventListener('keydown', keydownHandler); } catch(e){}
+  try { document.removeEventListener('keyup', keyupHandler); } catch(e){}
+  try { document.body.removeEventListener('click', bodyClickHandler); } catch(e){}
+  try { document.removeEventListener('pointerlockchange', pointerlockchangeHandler); } catch(e){}
+  try { document.removeEventListener('mousemove', mousemoveHandler); } catch(e){}
+  try { window.removeEventListener('resize', resizeHandler); } catch(e){}
+
+  // Stop any music related to the game
+  try { if (window.musicManager && window.musicManager.gameMusic) { window.musicManager.gameMusic.pause(); } } catch(e){}
+
+  // Dispose three.js objects
+  try {
+    scene.traverse((obj) => {
+      if (obj.isMesh) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => { if (m.dispose) m.dispose(); });
+          else if (obj.material.dispose) obj.material.dispose();
+        }
+      }
+    });
+  } catch(e) { console.warn('error disposing scene', e); }
+
+  try {
+    renderer.dispose();
+    // remove canvas from DOM
+    if (renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+  } catch(e) { console.warn('error disposing renderer', e); }
+
+  // Clear references
+  try { window.gameAnimId = null; } catch(e){}
+  window.gameDestroyed = true;
+  console.log('🧹 Juego destruido y recursos liberados');
+};
 
 // === AJUSTE VENTANA ===
-window.addEventListener('resize', () => {
+function resizeHandler() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
+window.addEventListener('resize', resizeHandler);

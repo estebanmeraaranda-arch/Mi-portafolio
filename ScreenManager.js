@@ -47,6 +47,16 @@ class ScreenManager {
       toScreen.style.opacity = "1";
       this.transitioning = false;
       this.currentScreen = screenNumber;
+      // Manejar música al cambiar de pantalla
+      try {
+        if (window.musicManager) {
+          if (screenNumber === 2) {
+            window.musicManager.playGame();
+          } else {
+            window.musicManager.playMenu();
+          }
+        }
+      } catch (e) { console.warn('music switch error', e); }
       console.log(`✅ Cambio a pantalla ${screenNumber} completado`);
     }, 50);
   }

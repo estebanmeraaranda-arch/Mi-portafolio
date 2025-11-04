@@ -133,3 +133,62 @@ canvas {
 .pause-menu button:hover {
     background-color: #ccc;
 }
+
+/* ======= PANEL ESC (PAUSA) ======= */
+.panelEsc {
+  position: absolute;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.panelEsc.active {
+  display: flex !important;
+  opacity: 1;
+}
+
+.panel-content {
+  background: #1c1c1c;
+  padding: 40px 60px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 0 30px #8338ec;
+  animation: popup 0.3s ease forwards;
+}
+
+@keyframes popup {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.panel-content h3 {
+  color: #fff;
+  font-size: 2em;
+  margin-bottom: 25px;
+  letter-spacing: 2px;
+}
+
+.panel-buttons button {
+  display: block;
+  width: 200px;
+  margin: 12px auto;
+  padding: 12px;
+  font-size: 1em;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fill.success {
+  background-color: #28a745;
+  color: white;
+}
+
+.fill.danger {
+  background-color: #c82333;
+  color: white;
+}

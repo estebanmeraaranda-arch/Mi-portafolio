@@ -29,67 +29,36 @@
     <div id="screen2" class="screen hidden">
       <canvas id="scene"></canvas>
     </div>
-    <!-- Scripts del juego -->
-    <script type="module" src="./Game/main.js"></script>
-    <script type="module" src="./Game/fireflies.js"></script>
-    
+    <!-- PANEL ESC -->
+    <div id="panelEsc" class="panelEsc" aria-hidden="true">
+      <div class="panel-content">
+        <h3>PAUSA</h3>
+        <div class="panel-buttons">
+          <button id="resumeBtn" class="fill">Volver al juego</button>
+          <button id="menuBtn" class="fill">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module">
       import { MusicManager } from './assets/Audio/audioManager.js';
 
-      // Crear instancia del gestor de música
+      // Crear instancia del gestor de música y exponerla globalmente
       const musicManager = new MusicManager();
+      window.musicManager = musicManager;
 
-      // Manejar el cambio de pantalla
+      // Iniciar música del menú cuando el DOM esté listo
       document.addEventListener('DOMContentLoaded', () => {
-        const startButton = document.getElementById('start');
-        const screen1 = document.getElementById('screen1');
-        const screen2 = document.getElementById('screen2');
-
-        // Debug: verificar que encontramos los elementos
-        console.log('Elementos encontrados:', {
-          startButton: !!startButton,
-          screen1: !!screen1,
-          screen2: !!screen2
-        });
-
-        // Iniciar música del menú
         musicManager.playMenu();
         console.log('🎵 Música del menú iniciada');
-
-        if (startButton && screen1 && screen2) {
-          startButton.addEventListener('click', () => {
-            console.log('🎮 Click en start detectado');
-            
-            // Cambiar música
-            musicManager.stopAll();
-            musicManager.playGame();
-            console.log('🎵 Cambiando a música del juego');
-            
-            // Remover clases antiguas
-            screen1.classList.remove('active');
-            screen1.classList.add('hidden');
-            
-            // Mostrar screen2
-            screen2.classList.remove('hidden');
-            screen2.classList.add('active');
-            
-            // Asegurarnos que el canvas está visible
-            const canvas = document.getElementById('scene');
-            if (canvas) {
-              canvas.style.display = 'block';
-              canvas.style.width = '100%';
-              canvas.style.height = '100%';
-            }
-          });
-        } else {
-          console.error('❌ No se encontraron todos los elementos necesarios');
-        }
       });
     </script>
 
-    <!-- Game Scripts -->
-    <script type="module" src="./Game/main.js"></script>
-    <script type="module" src="./Game/fireflies.js"></script>
-    <script type="module" src="./MenuPrincipal/Menu.js"></script>
+  <!-- Game Scripts -->
+  <script type="module" src="./Game/main.js"></script>
+  <script type="module" src="./Game/fireflies.js"></script>
+  <script type="module" src="./ScreenManager.js"></script>
+  <script type="module" src="./Game/pause.js"></script>
+  <script type="module" src="./MenuPrincipal/Menu.js"></script>
   </body>
 </html>
