@@ -1,7 +1,7 @@
 export class MusicManager {
   constructor() {
-    this.menuMusic = new Audio("/assets/Audio/Hip Shop - Toby Fox.mp3");
-    this.gameMusic = new Audio("/assets/Audio/Death By Glamour - Toby Fox.mp3");
+    this.menuMusic = new Audio("./assets/Audio/Hip Shop - Toby Fox.mp3");
+    this.gameMusic = new Audio("./assets/Audio/Death By Glamour - Toby Fox.mp3");
 
     this.menuMusic.loop = true;
     this.gameMusic.loop = true;

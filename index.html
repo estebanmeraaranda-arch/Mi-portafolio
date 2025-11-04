@@ -34,6 +34,11 @@
     <script type="module" src="./Game/fireflies.js"></script>
     
     <script type="module">
+      import { MusicManager } from './assets/Audio/audioManager.js';
+
+      // Crear instancia del gestor de música
+      const musicManager = new MusicManager();
+
       // Manejar el cambio de pantalla
       document.addEventListener('DOMContentLoaded', () => {
         const startButton = document.getElementById('start');
@@ -47,9 +52,18 @@
           screen2: !!screen2
         });
 
+        // Iniciar música del menú
+        musicManager.playMenu();
+        console.log('🎵 Música del menú iniciada');
+
         if (startButton && screen1 && screen2) {
           startButton.addEventListener('click', () => {
             console.log('🎮 Click en start detectado');
+            
+            // Cambiar música
+            musicManager.stopAll();
+            musicManager.playGame();
+            console.log('🎵 Cambiando a música del juego');
             
             // Remover clases antiguas
             screen1.classList.remove('active');
