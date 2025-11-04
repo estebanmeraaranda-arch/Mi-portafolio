@@ -1,15 +1,13 @@
+// === Menu.js (LIMPIO) ===
+import { playMenuMusic } from '../Audio/audioManager.js';
+
+// Variables para la animación del título
 var characters_up = [
   "A","B","C","D","E","F","G","H","I","J",
   "K","L","M","N","O","P","Q","R","S","T",
   "U","V","W","X","Y","Z"
 ];
-var characters_low = [
-  "a","b","c","d","e","f","g","h","i","j",
-  "k","l","m","n","o","p","q","r","s","t",
-  "u","v","w","x","y","z"
-];
 var title = ["*","*","*","*","*","*","*","*","*","*"];
-
 var complete = 0;
 
 function update_txt(title) {
@@ -43,11 +41,8 @@ var myFuncUpper = function (char_num, num) {
 
 function intro() {
   complete = 1;
-
-  // 🔹 PRIMERO: mostrar letras aleatorias
   randomIntro();
 
-  // 🔹 LUEGO: 1 segundo después, animar “BIENVENIDO”
   setTimeout(function () {
     complete = 2;
     console.log("start");
@@ -72,17 +67,8 @@ function intro() {
   }, 3400);
 }
 
-document.onload = intro();
-
-function start() {
-  if (complete == 3) {
-    document.getElementById("align").style.top = "40%";
-    document.getElementById("align").style.opacity = "0%";
-    setTimeout(function () {
-      // Aquí puedes cambiar de pantalla, si quieres:
-      // window.dispatchEvent(new CustomEvent("changeScreen", { detail: 2 }));
-    }, 1200);
-  }
-}
-
-document.getElementById("body").addEventListener("click", start);
+// Cuando el DOM esté listo, corre la intro y pon la música
+window.addEventListener('DOMContentLoaded', () => {
+  intro();
+  playMenuMusic();
+});

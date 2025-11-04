@@ -1,4 +1,10 @@
+// === ScreenManager/ScreenManager.js (MODIFICADO) ===
+
+// 1. ELIMINA LA IMPORTACIÓN DE stopAllMusic
+// import { stopAllMusic } from '../Audio/audioManager.js'; // <- BORRA ESTA LÍNEA
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Importamos el juego y los efectos
   import("../main.js");
   import("../fireflies.js");
 
@@ -11,21 +17,27 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+// ... (inicio del archivo, código anterior) ...
+
   startButton.addEventListener("click", () => {
     console.log("✅ Click detectado, cambiando de pantalla...");
 
     // Transición visual
-    screen1.style.opacity = 0;
-    screen1.style.pointerEvents = "none";
-
+    screen1.classList.remove('active');
+    screen1.classList.add('hidden');
+    
+    // Esperamos a que la animación de 'fade out' termine
     setTimeout(() => {
-      screen1.style.display = "none";
-      screen2.style.display = "block";
-      screen2.style.opacity = 0;
+      screen2.classList.remove('hidden');
+      screen2.classList.add('active');
+      
+      // 3. Disparamos el evento
+      window.dispatchEvent(new CustomEvent("changeScreen", { detail: 2 }));
 
-      setTimeout(() => {
-        screen2.style.opacity = 1;
-      }, 50);
-    }, 800);
+      // ✨ ¡AÑADE ESTA LÍNEA DE NUEVO! ✨
+      // La solicitamos aquí, ya que el canvas está visible.
+      document.body.requestPointerLock();
+
+    }, 800); // 800ms para la transición
   });
 });

@@ -1,8 +1,7 @@
 // === Importaciones necesarias de Three.js ===
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-
+import { playMenuMusic, stopAllMusic, playGameMusic } from '../Audio/audioManager.js';
 // === ESCENA PRINCIPAL ===
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e0e1a);
@@ -137,7 +136,9 @@ document.addEventListener('keyup', (e) => (keys[e.code] = false));
 let pitch = 0;
 let yaw = Math.PI;
 let isLocked = false;
-document.body.addEventListener('click', () => document.body.requestPointerLock());
+renderer.domElement.addEventListener('click', () => {
+  document.body.requestPointerLock();
+});
 document.addEventListener('pointerlockchange', () => {
   isLocked = document.pointerLockElement === document.body;
 });
@@ -293,3 +294,31 @@ window.addEventListener('resize', () => {
 });
 export { scene, camera, renderer };
 window.scene = scene;
+
+
+// === main.js (MODIFICADO) ===
+// ... (código anterior) ...
+
+// Música solo cuando screen2 está activa
+// === main.js (AJUSTE FINAL) ===
+// ... (código anterior) ...
+
+// Música solo cuando screen2 está activa
+function handleScreenChange(e) {
+  const screen2 = document.getElementById('screen2');
+  
+  if (screen2 && screen2.classList.contains('active')) {
+    // 1. Paramos la música del menú. (Esto detiene la canción 1)
+    stopAllMusic();
+    
+    // 2. Iniciamos la música del juego. (Esto inicia la canción 2)
+    playGameMusic();
+  } else {
+    // Si volvemos al menú, paramos todo (código de respaldo)
+    stopAllMusic();
+  }
+}
+
+window.addEventListener('changeScreen', handleScreenChange);
+
+// ... (resto del código) ...
