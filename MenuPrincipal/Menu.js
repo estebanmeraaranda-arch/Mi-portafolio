@@ -1,13 +1,10 @@
-// === Menu.js (LIMPIO) ===
-import { playMenuMusic } from '../Audio/audioManager.js';
-
-// Variables para la animación del título
 var characters_up = [
   "A","B","C","D","E","F","G","H","I","J",
   "K","L","M","N","O","P","Q","R","S","T",
   "U","V","W","X","Y","Z"
 ];
 var title = ["*","*","*","*","*","*","*","*","*","*"];
+
 var complete = 0;
 
 function update_txt(title) {
@@ -16,7 +13,6 @@ function update_txt(title) {
   document.getElementById("title").innerHTML = string;
 }
 
-// genera texto aleatorio
 function randomIntro() {
   for (let i = 0; i < title.length; i++) {
     title[i] = characters_up[Math.floor(Math.random() * characters_up.length)];
@@ -41,12 +37,14 @@ var myFuncUpper = function (char_num, num) {
 
 function intro() {
   complete = 1;
+
+  // 🔹 Mostrar letras aleatorias
   randomIntro();
 
+  // 🔹 Animar “BIENVENIDO” después de 1s
   setTimeout(function () {
     complete = 2;
     console.log("start");
-    // B I E N V E N I D O
     myFuncUpper(2, 0);  // B
     myFuncUpper(9, 1);  // I
     myFuncUpper(5, 2);  // E
@@ -67,8 +65,40 @@ function intro() {
   }, 3400);
 }
 
-// Cuando el DOM esté listo, corre la intro y pon la música
-window.addEventListener('DOMContentLoaded', () => {
+// DOM listo
+document.addEventListener('DOMContentLoaded', () => {
   intro();
-  playMenuMusic();
+
+  const startButton = document.getElementById("start");
+  if (startButton) {
+    startButton.addEventListener("click", start);
+    console.log("✅ Event listener agregado al botón start");
+  }
+
+  console.log("✅ Menu.js inicializado correctamente");
 });
+
+function start(event) {
+  if (complete !== 3) {
+    console.log("⏳ Esperando a que la animación termine... (complete =", complete, ")");
+    return;
+  }
+
+  console.log("🎮 Iniciando transición...");
+
+  const alignElement = document.getElementById("align");
+  if (alignElement) {
+    alignElement.style.top = "40%";
+    alignElement.style.opacity = "0";
+  }
+
+  setTimeout(function () {
+    console.log("🔄 Disparando cambio de pantalla a 2...");
+    const changeEvent = new CustomEvent("changeScreen", { 
+      detail: 2,
+      bubbles: true,
+      cancelable: true 
+    });
+    window.dispatchEvent(changeEvent);
+  }, 800);
+}

@@ -1,24 +1,22 @@
 <!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portafolio 3D</title>
-
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="MenuPrincipal/Menu.css" />
-
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
-        }
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portafolio 3D</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="MenuPrincipal/Menu.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.159.0/examples/jsm/"
       }
-    </script>
-  </head>
+    }
+  </script>
+</head>
 
-  <body>
+<body>
     <!-- 🟣 SCREEN 1: MENÚ PRINCIPAL -->
     <div id="screen1" class="screen active">
       <div class="align" id="align">
@@ -31,10 +29,53 @@
     <div id="screen2" class="screen hidden">
       <canvas id="scene"></canvas>
     </div>
+    <!-- Scripts del juego -->
+    <script type="module" src="./Game/main.js"></script>
+    <script type="module" src="./Game/fireflies.js"></script>
+    
+    <script type="module">
+      // Manejar el cambio de pantalla
+      document.addEventListener('DOMContentLoaded', () => {
+        const startButton = document.getElementById('start');
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
 
-    <!-- Scripts -->
-    <script type="module" src="MenuPrincipal/Menu.js"></script>
-    <script type="module" src="ScreenManager/ScreenManager.js"></script>
-   <script type="module" src="Audio/audioManager.js"></script>
+        // Debug: verificar que encontramos los elementos
+        console.log('Elementos encontrados:', {
+          startButton: !!startButton,
+          screen1: !!screen1,
+          screen2: !!screen2
+        });
+
+        if (startButton && screen1 && screen2) {
+          startButton.addEventListener('click', () => {
+            console.log('🎮 Click en start detectado');
+            
+            // Remover clases antiguas
+            screen1.classList.remove('active');
+            screen1.classList.add('hidden');
+            
+            // Mostrar screen2
+            screen2.classList.remove('hidden');
+            screen2.classList.add('active');
+            
+            // Asegurarnos que el canvas está visible
+            const canvas = document.getElementById('scene');
+            if (canvas) {
+              canvas.style.display = 'block';
+              canvas.style.width = '100%';
+              canvas.style.height = '100%';
+            }
+          });
+        } else {
+          console.error('❌ No se encontraron todos los elementos necesarios');
+        }
+      });
+    </script>
+
+    <!-- Game Scripts -->
+    <script type="module" src="./Game/main.js"></script>
+    <script type="module" src="./Game/fireflies.js"></script>
+    <script type="module" src="./MenuPrincipal/Menu.js"></script>
   </body>
 </html>
