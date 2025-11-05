@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Fireflies } from './fireflies.js';
+import { loadCharacters, setupInteraction, updateHints, disposeInteraction, registerInteractionCallback } from './CharactersManager.js';
 
 // === ESCENA ===
 const scene = new THREE.Scene();
@@ -30,6 +31,31 @@ light.position.set(4, 8, 10);
 light.castShadow = true;
 scene.add(light);
 scene.add(new THREE.AmbientLight(0x404040, 1.2));
+
+// Cargar personajes (se añaden a la escena dentro del gestor)
+
+// Once characters are loaded we want the CharactersManager to handle
+// interaction hints and the 'E' key. We'll initialize it here and
+// provide a getter for the player's position (penguin).
+loadCharacters(scene).then((chars) => {
+  window.characters = chars;
+  try {
+    // pass the penguin.position (Vector3) so the manager can compute distances
+    setupInteraction({ renderer, camera, getPlayerPosition: () => (penguin ? penguin.position : null), distance: 2.0 });
+    // Example: register per-character callback if you want specific behavior
+    registerInteractionCallback('me', ({ k, obj, d }) => { console.log('Interacted with', k); });
+  } catch(e) { console.warn('setupInteraction failed', e); }
+  // Add characters to the world's collidable meshes so the player collides with them
+  try {
+    Object.keys(chars).forEach((k) => {
+      const obj = chars[k];
+      if (!obj) return;
+      // push the root object so intersectObjects(..., true) checks its meshes
+      collidableMeshes.push(obj);
+    });
+    console.log('✅ Personajes añadidos a collidableMeshes:', collidableMeshes.length);
+  } catch(e) { console.warn('no se pudo añadir personajes a collidableMeshes', e); }
+}).catch(err => console.warn('Error cargando personajes:', err));
 
 // === FÍSICA ===
 const gravity = -0.03;
@@ -200,9 +226,13 @@ function animate() {
     camera.lookAt(penguin.position.clone().add(new THREE.Vector3(0,0.4,0)));
   }
 
+  // update interaction hints (positioning & visibility)
+  try { updateHints(); } catch(e) {}
+
   renderer.render(scene,camera);
 }
 animate();
+
 
 // === CLEANUP / DESTROY ===
 // Expose a destroy function to stop the loop and free GL resources
@@ -218,6 +248,8 @@ window.destroyGame = function destroyGame() {
   try { document.removeEventListener('pointerlockchange', pointerlockchangeHandler); } catch(e){}
   try { document.removeEventListener('mousemove', mousemoveHandler); } catch(e){}
   try { window.removeEventListener('resize', resizeHandler); } catch(e){}
+  // dispose interaction helpers (hints + key handler)
+  try { disposeInteraction(); } catch(e){}
 
   // Stop any music related to the game
   try { if (window.musicManager && window.musicManager.gameMusic) { window.musicManager.gameMusic.pause(); } } catch(e){}
@@ -244,6 +276,7 @@ window.destroyGame = function destroyGame() {
   // Clear references
   try { window.gameAnimId = null; } catch(e){}
   window.gameDestroyed = true;
+  // interaction cleanup handled by disposeInteraction()
   console.log('🧹 Juego destruido y recursos liberados');
 };
 

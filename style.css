@@ -192,3 +192,31 @@ canvas {
   background-color: #c82333;
   color: white;
 }
+
+/* Interaction hint 'E' */
+.interaction-hint {
+  color: white;
+  background: transparent;
+  border: 2px solid white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 700;
+  font-family: monospace;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+#interactionContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
