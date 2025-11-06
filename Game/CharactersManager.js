@@ -74,8 +74,38 @@ let _getPlayerPos = null;
 let _container = null;
 let _hints = {};
 let _keyHandler = null;
+let _keyUpHandler = null;
+let _escHandler = null;
+let _imageContainer = null;
 let _interactDistance = 2.0;
 const _callbacks = {};
+
+function createImageOverlay() {
+  if (_imageContainer) return _imageContainer;
+  const c = document.createElement('div');
+  c.id = 'yogameContainer';
+  c.style.position = 'fixed';
+  c.style.top = '50%';
+  c.style.left = '50%';
+  c.style.transform = 'translate(-50%, -50%)';
+  c.style.display = 'none';
+  c.style.zIndex = '1000';
+  c.style.opacity = '0';
+  c.style.transition = 'opacity 0.3s ease';
+  
+  const img = document.createElement('img');
+  img.src = './assets/img/YOGAME.png';
+  img.style.display = 'block';
+  // tamaño ajustado y transición suave
+  img.style.width = '800px'; // tamaño aumentado
+  img.style.height = 'auto';
+  img.style.transition = 'opacity 0.3s ease';
+  
+  c.appendChild(img);
+  document.body.appendChild(c);
+  _imageContainer = c;
+  return c;
+}
 
 function ensureContainer() {
   if (_container) return _container;
@@ -117,20 +147,38 @@ function getModelTopY(obj) {
 }
 
 export function setupInteraction(options) {
+  // Primero limpiamos cualquier listener previo para evitar duplicados
+  disposeInteraction();
+  
   _renderer = options.renderer;
   _camera = options.camera;
   _getPlayerPos = options.getPlayerPosition; // function
   if (options.distance) _interactDistance = options.distance;
 
-  // key handler
+  function showImage() {
+    const container = createImageOverlay();
+    container.style.display = 'block';
+  }
+
+  function hideImage() {
+    if (_imageContainer) {
+      _imageContainer.style.display = 'none';
+    }
+  }
+
+  let isShowingImage = false;
+  let isKeyDown = false;
+
   _keyHandler = function(e) {
     if (e.code !== 'KeyE') return;
+    if (isKeyDown) return; // prevent repeat events
+    isKeyDown = true;
+
     const playerPos = _getPlayerPos && _getPlayerPos();
     if (!playerPos) return;
-    // allow getPlayerPosition to return either a Vector3 or an Object3D
     const playerVec = (playerPos.position && playerPos.position.isVector3) ? playerPos.position : (playerPos.isVector3 ? playerPos : (playerPos.position || null));
     if (!playerVec) return;
-    // find nearest character
+
     let nearest = null;
     let nd = Infinity;
     Object.keys(window.characters || {}).forEach((k) => {
@@ -139,12 +187,62 @@ export function setupInteraction(options) {
       const d = playerVec.distanceTo(obj.position);
       if (d < nd) { nd = d; nearest = { k, obj, d }; }
     });
-    if (nearest && nd <= _interactDistance) {
-      if (_callbacks[nearest.k]) _callbacks[nearest.k](nearest);
-      else console.log('Interact (no-callback) near', nearest.k);
+
+    if (nearest && nd <= _interactDistance && nearest.k === 'me' && !isShowingImage) {
+      showImage();
+      isShowingImage = true;
     }
   };
-  document.addEventListener('keydown', _keyHandler);
+
+  _keyUpHandler = function(e) {
+    if (e.code === 'KeyE') {
+      isKeyDown = false;
+      // Ya no ocultamos la imagen al soltar E
+    }
+  };
+
+  _escHandler = function(e) {
+    // Solo procesar el evento si viene del juego
+    if (!_renderer || !_camera) return;
+    
+    if (e.code === 'Escape') {
+      if (isShowingImage) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        hideImage();
+        isShowingImage = false;
+        return false;
+      }
+    }
+  };
+
+  // Retrasar la adición de los listeners para asegurar que el menú inicial esté completamente cargado
+  setTimeout(() => {
+    document.addEventListener('keydown', _escHandler, true);
+    document.addEventListener('keydown', _keyHandler);
+    document.addEventListener('keyup', _keyUpHandler);
+  }, 100);
+
+  // Modifica showImage y hideImage para usar transiciones
+  function showImage() {
+    const container = createImageOverlay();
+    container.style.display = 'block';
+    // Forzar reflow
+    container.offsetHeight;
+    container.style.opacity = '1';
+  }
+
+  function hideImage() {
+    if (_imageContainer) {
+      _imageContainer.style.opacity = '0';
+      setTimeout(() => {
+        _imageContainer.style.display = 'none';
+      }, 300);
+    }
+  }
+
+  // Exponer checkDistance para llamarlo en cada frame
+  window.checkInteractionDistance = checkDistance;
 }
 
 export function updateHints() {
@@ -163,9 +261,14 @@ export function updateHints() {
     const obj = chars[key];
     if (!obj) return;
     const hint = createHint(key);
-  if (!playerVec) { hint.style.display = 'none'; return; }
-  const d = playerVec.distanceTo(obj.position);
-    if (d > _interactDistance) { hint.style.display = 'none'; return; }
+    if (!playerVec) { hint.style.display = 'none'; return; }
+    const d = playerVec.distanceTo(obj.position);
+    // Mostrar el hint siempre que la distancia sea menor o igual a _interactDistance
+    // Sin importar qué tan cerca estemos
+    if (d > _interactDistance) { 
+      hint.style.display = 'none'; 
+      return; 
+    }
 
   // compute world position: use the model's world position (X/Z) and add a vertical offset
   // This is simpler and more robust when the model pivot is not at the visual center.
@@ -186,12 +289,14 @@ export function updateHints() {
   worldPos.y += offY;
   worldPos.z += offZ;
     const proj = worldPos.project(_camera);
-    if (proj.z < -1 || proj.z > 1) { hint.style.display = 'none'; return; }
+    // Ajustamos la condición para mantener visible el hint incluso cuando estamos muy cerca
+    if (proj.z > 1) { hint.style.display = 'none'; return; }
     const x = offsetLeft + (proj.x * 0.5 + 0.5) * width;
     const y = offsetTop + (-proj.y * 0.5 + 0.5) * height;
     hint.style.left = `${Math.round(x)}px`;
     hint.style.top = `${Math.round(y)}px`;
     hint.style.transform = 'translate(-50%, -140%)';
+    // Aseguramos que el hint sea visible
     hint.style.display = 'block';
   });
 }
@@ -231,11 +336,32 @@ export function getHintOffset(name) {
 }
 
 export function disposeInteraction() {
-  try { document.removeEventListener('keydown', _keyHandler); } catch(e){}
+  try { 
+    document.removeEventListener('keydown', _keyHandler); 
+    document.removeEventListener('keyup', _keyUpHandler);
+    document.removeEventListener('keydown', _escHandler, true);
+    
+    if (_container && _container.parentNode) {
+      _container.parentNode.removeChild(_container);
+    }
+    if (_imageContainer && _imageContainer.parentNode) {
+      _imageContainer.parentNode.removeChild(_imageContainer);
+    }
+    
+    // Reset all state variables
+    _keyHandler = null;
+    _keyUpHandler = null;
+    _escHandler = null;
+    isShowingImage = false;
+    isKeyDown = false;
+  } catch(e){
+    console.error('Error cleaning up interaction:', e);
+  }
   try {
-    if (_container && _container.parentNode) _container.parentNode.removeChild(_container);
+    if (_imageContainer && _imageContainer.parentNode) _imageContainer.parentNode.removeChild(_imageContainer);
   } catch(e){}
   _container = null;
+  _imageContainer = null;
   _hints = {};
   _renderer = null;
   _camera = null;

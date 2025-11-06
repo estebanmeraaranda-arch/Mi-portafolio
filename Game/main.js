@@ -226,8 +226,10 @@ function animate() {
     camera.lookAt(penguin.position.clone().add(new THREE.Vector3(0,0.4,0)));
   }
 
-  // update interaction hints (positioning & visibility)
-  try { updateHints(); } catch(e) {}
+  // update interaction hints
+  try { 
+    updateHints();
+  } catch(e) {}
 
   renderer.render(scene,camera);
 }
