@@ -42,9 +42,9 @@ export async function loadCharacters(scene) {
     if (zorritoScene) {
       zorritoScene.name = 'ZorritoFinal';
       zorritoScene.scale.set(0.8, 0.8, 0.8);
-      zorritoScene.position.set(-1, 0.1, 1);
+      zorritoScene.position.set(0.1, 0.1, -0.1);
       // vertical hint offset (meters above model top)
-  zorritoScene.userData.hintOffset = { x: 6, y: 2, z: 4 };
+  zorritoScene.userData.hintOffset = { x: 0.81, y: 0.72, z: -2.40};
       results.zorrito = zorritoScene;
       if (scene) scene.add(zorritoScene);
     }
@@ -131,6 +131,12 @@ function createHint(name) {
   el.style.position = 'absolute';
   el.style.display = 'none';
   el.style.pointerEvents = 'none';
+  el.style.fontSize = '24px';
+  el.style.color = 'white';
+  el.style.fontWeight = 'bold';
+  el.style.textShadow = '2px 2px 4px rgba(0,0,0,0.7)';
+  el.style.zIndex = '1000';
+  el.style.userSelect = 'none';
   c.appendChild(el);
   _hints[name] = el;
   return el;
@@ -147,8 +153,16 @@ function getModelTopY(obj) {
 }
 
 export function setupInteraction(options) {
-  // Primero limpiamos cualquier listener previo para evitar duplicados
+  // Limpiar completamente el estado anterior
   disposeInteraction();
+  
+  // Limpiar el contenedor de hints y todos los hints existentes
+  if (_container) {
+    while (_container.firstChild) {
+      _container.removeChild(_container.firstChild);
+    }
+  }
+  _hints = {};
   
   _renderer = options.renderer;
   _camera = options.camera;
@@ -247,6 +261,7 @@ export function setupInteraction(options) {
 
 export function updateHints() {
   if (!_renderer || !_camera) return;
+  
   const chars = window.characters || {};
   const canvas = _renderer.domElement;
   const rect = canvas.getBoundingClientRect();
@@ -261,42 +276,76 @@ export function updateHints() {
     const obj = chars[key];
     if (!obj) return;
     const hint = createHint(key);
-    if (!playerVec) { hint.style.display = 'none'; return; }
-    const d = playerVec.distanceTo(obj.position);
-    // Mostrar el hint siempre que la distancia sea menor o igual a _interactDistance
-    // Sin importar qué tan cerca estemos
-    if (d > _interactDistance) { 
-      hint.style.display = 'none'; 
-      return; 
+    if (!playerVec) return;
+    
+    // Calcular distancia en el plano XZ
+    const dx = playerVec.x - obj.position.x;
+    const dz = playerVec.z - obj.position.z;
+    const d = Math.sqrt(dx * dx + dz * dz);
+    
+    // Lógica específica para cada personaje
+    if (key === 'zorrito') {
+      // El placeholder del zorrito será siempre visible dentro del rango
+      hint.style.display = d <= _interactDistance ? 'block' : 'none';
+      if (hint.style.display === 'block') {
+        // Asegurar que el hint del zorrito sea más visible
+        hint.style.zIndex = '1000';
+      }
+    } else if (key === 'me') {
+      // Para el personaje "me", usar la lógica original
+      hint.style.display = d <= _interactDistance ? 'block' : 'none';
+    }
+    
+    if (hint.style.display === 'block') {
+      const worldPos = new THREE.Vector3();
+      obj.getWorldPosition(worldPos);
+      
+      // Aplicar offsets específicos por personaje
+      if (obj.userData && obj.userData.hintOffset) {
+        const ho = obj.userData.hintOffset;
+        if (typeof ho === 'object') {
+          worldPos.x += Number(ho.x) || 0;
+          worldPos.y += Number(ho.y) || 0;
+          worldPos.z += Number(ho.z) || 0;
+        }
+      }
+      
+      const proj = worldPos.project(_camera);
+      const x = offsetLeft + (proj.x * 0.5 + 0.5) * width;
+      const y = offsetTop + (-proj.y * 0.5 + 0.5) * height;
+      
+      hint.style.left = `${Math.round(x)}px`;
+      hint.style.top = `${Math.round(y)}px`;
+      hint.style.transform = 'translate(-50%, -140%)';
     }
 
-  // compute world position: use the model's world position (X/Z) and add a vertical offset
-  // This is simpler and more robust when the model pivot is not at the visual center.
-  const worldPos = new THREE.Vector3();
-  obj.getWorldPosition(worldPos);
-  // support hintOffset as {x,y,z} or numeric (y)
-  let offX = 0, offY = 0.15, offZ = 0;
-  if (obj && obj.userData && obj.userData.hintOffset !== undefined) {
-    const ho = obj.userData.hintOffset;
-    if (typeof ho === 'number') offY = ho;
-    else if (ho && typeof ho === 'object') {
-      offX = Number(ho.x) || 0;
-      offY = (typeof ho.y === 'number') ? ho.y : offY;
-      offZ = Number(ho.z) || 0;
+    // Usar la posición fija del objeto para el hint
+    const worldPos = new THREE.Vector3();
+    obj.getWorldPosition(worldPos);
+    
+    // Aplicar el offset guardado en userData
+    if (obj && obj.userData && obj.userData.hintOffset !== undefined) {
+      const ho = obj.userData.hintOffset;
+      if (typeof ho === 'number') {
+        worldPos.y += ho;
+      } else if (ho && typeof ho === 'object') {
+        worldPos.x += Number(ho.x) || 0;
+        worldPos.y += Number(ho.y) || 0;
+        worldPos.z += Number(ho.z) || 0;
+      }
     }
-  }
-  worldPos.x += offX;
-  worldPos.y += offY;
-  worldPos.z += offZ;
+
+    // Proyectar la posición del mundo a la pantalla
     const proj = worldPos.project(_camera);
-    // Ajustamos la condición para mantener visible el hint incluso cuando estamos muy cerca
-    if (proj.z > 1) { hint.style.display = 'none'; return; }
+    
+    // Convertir a coordenadas de pantalla
     const x = offsetLeft + (proj.x * 0.5 + 0.5) * width;
     const y = offsetTop + (-proj.y * 0.5 + 0.5) * height;
+    
+    // Mantener el estilo original
     hint.style.left = `${Math.round(x)}px`;
     hint.style.top = `${Math.round(y)}px`;
     hint.style.transform = 'translate(-50%, -140%)';
-    // Aseguramos que el hint sea visible
     hint.style.display = 'block';
   });
 }
