@@ -100,6 +100,25 @@ Promise.all([
   window.characters = chars;
   window.houses = houses;
 
+  // Vincular la casa como un 'personaje' más para reutilizar la lógica de placeholders
+  try {
+    if (houses && houses.casa) {
+      window.characters.casa = houses.casa;
+      // Ajustes por defecto del placeholder de la casa (puedes cambiarlos)
+      houses.casa.userData = houses.casa.userData || {};
+      if (houses.casa.userData.hintOffset === undefined) {
+        // Modifica esta posición a tu gusto para mover el botón de la casa
+        houses.casa.userData.hintOffset = { x: 0, y: 1.4, z: 0 };
+      }
+      if (houses.casa.userData.hintDistance === undefined) {
+        houses.casa.userData.hintDistance = 1.8;
+      }
+      if (houses.casa.userData.hintSpriteSize === undefined) {
+        houses.casa.userData.hintSpriteSize = 0.2;
+      }
+    }
+  } catch(e) { console.warn('No se pudo vincular la casa a placeholders', e); }
+
   try {
     setupPlaceholders({ 
       scene,
@@ -164,7 +183,7 @@ function onMouseClick(event) {
 
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name === 'PortalCube') {
-      window.location.href = 'https://youtu.be/haf67eKF0uo?si=Yrz8jkuZ96VV_i6A'; // ← CAMBIA TU LINK
+      window.location.href = 'https://www.canva.com/design/DAGniYdzvr8/40LHIXXsg6kYJFMcZFWt8g/edit?utm_content=DAGniYdzvr8&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton'; // ← CAMBIA TU LINK
       break;
     }
   }

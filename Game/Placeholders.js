@@ -8,6 +8,7 @@ let _getPlayerPos = null;
 let _interactDistance = 1.8;
 let _imageContainer = null;
 let _zorritoImageContainer = null;
+let _studyImageContainer = null;
 let _keyHandler = null;
 let _keyUpHandler = null;
 let _escHandler = null;
@@ -36,11 +37,14 @@ function createImageOverlay() {
   c.style.transition = 'opacity 0.3s ease';
  
   const img = document.createElement('img');
-  img.src = './assets/img/YOGAME.png';
+  img.src = './assets/img/YO.png';
   img.style.display = 'block';
   img.style.width = '800px';
   img.style.height = 'auto';
-  img.style.transition = 'opacity 0.3s ease';
+  img.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  img.style.transform = 'scale(1)';
+  img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.03)'; img.style.opacity = '0.95'; });
+  img.addEventListener('mouseleave', () => { img.style.transform = 'scale(1)'; img.style.opacity = '1'; });
  
   c.appendChild(img);
   document.body.appendChild(c);
@@ -78,7 +82,7 @@ function createZorritoImageOverlay() {
   c.style.zIndex = '1000';
   c.style.opacity = '0';
   c.style.transition = 'opacity 0.3s ease';
-  c.style.pointerEvents = 'none';
+  c.style.pointerEvents = 'auto';
  
   const imagesWrapper = document.createElement('div');
   imagesWrapper.style.position = 'relative';
@@ -95,7 +99,9 @@ function createZorritoImageOverlay() {
   imgLeft.style.height = '80vh';
   imgLeft.style.maxWidth = '30%';
   imgLeft.style.objectFit = 'contain';
-  imgLeft.style.transition = 'opacity 0.3s ease';
+  imgLeft.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  imgLeft.addEventListener('mouseenter', () => { imgLeft.style.transform = 'scale(1.04)'; imgLeft.style.opacity = '0.95'; });
+  imgLeft.addEventListener('mouseleave', () => { imgLeft.style.transform = 'scale(1)'; imgLeft.style.opacity = '1'; });
  
   const imgCenter = document.createElement('img');
   imgCenter.src = './assets/img/centro.png';
@@ -103,7 +109,9 @@ function createZorritoImageOverlay() {
   imgCenter.style.height = '80vh';
   imgCenter.style.maxWidth = '30%';
   imgCenter.style.objectFit = 'contain';
-  imgCenter.style.transition = 'opacity 0.3s ease';
+  imgCenter.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  imgCenter.addEventListener('mouseenter', () => { imgCenter.style.transform = 'scale(1.04)'; imgCenter.style.opacity = '0.95'; });
+  imgCenter.addEventListener('mouseleave', () => { imgCenter.style.transform = 'scale(1)'; imgCenter.style.opacity = '1'; });
  
   const imgRight = document.createElement('img');
   imgRight.src = './assets/img/derecha.png';
@@ -111,7 +119,9 @@ function createZorritoImageOverlay() {
   imgRight.style.height = '80vh';
   imgRight.style.maxWidth = '30%';
   imgRight.style.objectFit = 'contain';
-  imgRight.style.transition = 'opacity 0.3s ease';
+  imgRight.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  imgRight.addEventListener('mouseenter', () => { imgRight.style.transform = 'scale(1.04)'; imgRight.style.opacity = '0.95'; });
+  imgRight.addEventListener('mouseleave', () => { imgRight.style.transform = 'scale(1)'; imgRight.style.opacity = '1'; });
  
   imagesWrapper.appendChild(imgLeft);
   imagesWrapper.appendChild(imgCenter);
@@ -135,6 +145,53 @@ function hideZorritoImages() {
     _zorritoImageContainer.style.opacity = '0';
     setTimeout(() => {
       _zorritoImageContainer.style.display = 'none';
+    }, 300);
+  }
+}
+
+// -------- Overlay ESTUDIO (para la casa) --------
+function createStudyOverlay() {
+  if (_studyImageContainer) return _studyImageContainer;
+  const c = document.createElement('div');
+  c.id = 'studyImageContainer';
+  c.style.position = 'fixed';
+  c.style.top = '50%';
+  c.style.left = '50%';
+  c.style.transform = 'translate(-50%, -50%)';
+  c.style.display = 'none';
+  c.style.zIndex = '1000';
+  c.style.opacity = '0';
+  c.style.transition = 'opacity 0.3s ease';
+  c.style.pointerEvents = 'auto';
+
+  const img = document.createElement('img');
+  img.src = './assets/img/ESTUDIO.png';
+  img.style.display = 'block';
+  img.style.width = '900px';
+  img.style.height = 'auto';
+  img.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  img.style.transform = 'scale(1)';
+  img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.03)'; img.style.opacity = '0.95'; });
+  img.addEventListener('mouseleave', () => { img.style.transform = 'scale(1)'; img.style.opacity = '1'; });
+
+  c.appendChild(img);
+  document.body.appendChild(c);
+  _studyImageContainer = c;
+  return c;
+}
+
+function showStudyImage() {
+  const container = createStudyOverlay();
+  container.style.display = 'block';
+  container.offsetHeight;
+  container.style.opacity = '1';
+}
+
+function hideStudyImage() {
+  if (_studyImageContainer) {
+    _studyImageContainer.style.opacity = '0';
+    setTimeout(() => {
+      _studyImageContainer.style.display = 'none';
     }, 300);
   }
 }
@@ -196,6 +253,7 @@ export function setupPlaceholders(options) {
   _raycaster = new THREE.Raycaster();
   let isShowingImage = false;
   let isShowingZorritoImages = false;
+  let isShowingStudyImage = false;
   let isKeyDown = false;
 
   _keyHandler = function(e) {
@@ -221,13 +279,17 @@ export function setupPlaceholders(options) {
       }
     });
 
-    if (nearest && nd <= _interactDistance && nearest.k === 'me' && !isShowingImage && !isShowingZorritoImages) {
+    if (nearest && nd <= _interactDistance && nearest.k === 'me' && !isShowingImage && !isShowingZorritoImages && !isShowingStudyImage) {
       showImage();
       isShowingImage = true;
     }
-    else if (nearest && nd <= _interactDistance && nearest.k === 'zorrito' && !isShowingZorritoImages && !isShowingImage) {
+    else if (nearest && nd <= _interactDistance && nearest.k === 'zorrito' && !isShowingZorritoImages && !isShowingImage && !isShowingStudyImage) {
       showZorritoImages();
       isShowingZorritoImages = true;
+    }
+    else if (nearest && nd <= _interactDistance && nearest.k === 'casa' && !isShowingStudyImage && !isShowingImage && !isShowingZorritoImages) {
+      showStudyImage();
+      isShowingStudyImage = true;
     }
   };
 
@@ -252,6 +314,13 @@ export function setupPlaceholders(options) {
         e.preventDefault();
         hideZorritoImages();
         isShowingZorritoImages = false;
+        return false;
+      }
+      if (isShowingStudyImage) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        hideStudyImage();
+        isShowingStudyImage = false;
         return false;
       }
     }
