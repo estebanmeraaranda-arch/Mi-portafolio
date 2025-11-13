@@ -31,10 +31,11 @@ export async function loadCharacters(scene) {
     // Ajustes por defecto (escala/posición). Puedes modificar desde main después.
     if (meScene) {
       meScene.name = 'MeFinal';
-      meScene.scale.set(0.8, 0.8, 0.8);
+      meScene.scale.set(0.8, 1, 0.8);
       meScene.position.set(-1, 0.05, -0.4);
       // vertical hint offset (meters above model top); tweak this per-model if needed
-  meScene.userData.hintOffset = { x: -0.63, y: 0.60, z: -2.26 };
+      meScene.userData.hintOffset = { x: -0.63, y: 0.80, z: -2.26 };
+      meScene.userData.hintDistance = 1.6;
       results.me = meScene;
       if (scene) scene.add(meScene);
     }
@@ -42,9 +43,11 @@ export async function loadCharacters(scene) {
     if (zorritoScene) {
       zorritoScene.name = 'ZorritoFinal';
       zorritoScene.scale.set(0.8, 0.8, 0.8);
-      zorritoScene.position.set(0.1, 0.1, -0.1);
+      zorritoScene.position.set(-2, 0, 0);
       // vertical hint offset (meters above model top)
-  zorritoScene.userData.hintOffset = { x: 0.81, y: 0.72, z: -2.40};
+      zorritoScene.userData.hintOffset = { x: -1.5, y: 1, z: -0.6};
+      zorritoScene.userData.hintDistance = 1.6;
+
       results.zorrito = zorritoScene;
       if (scene) scene.add(zorritoScene);
     }
@@ -65,294 +68,8 @@ export function loadAllCharacters(scene) {
   loadCharacters(scene).then(() => {});
 }
 
-// ---------------- Interaction / Hints Management ----------------
-// The manager can create DOM hints above characters and handle 'E' interactions.
-
-let _renderer = null;
-let _camera = null;
-let _getPlayerPos = null;
-let _container = null;
-let _hints = {};
-let _keyHandler = null;
-let _keyUpHandler = null;
-let _escHandler = null;
-let _imageContainer = null;
-let _interactDistance = 2.0;
-const _callbacks = {};
-
-function createImageOverlay() {
-  if (_imageContainer) return _imageContainer;
-  const c = document.createElement('div');
-  c.id = 'yogameContainer';
-  c.style.position = 'fixed';
-  c.style.top = '50%';
-  c.style.left = '50%';
-  c.style.transform = 'translate(-50%, -50%)';
-  c.style.display = 'none';
-  c.style.zIndex = '1000';
-  c.style.opacity = '0';
-  c.style.transition = 'opacity 0.3s ease';
-  
-  const img = document.createElement('img');
-  img.src = './assets/img/YOGAME.png';
-  img.style.display = 'block';
-  // tamaño ajustado y transición suave
-  img.style.width = '800px'; // tamaño aumentado
-  img.style.height = 'auto';
-  img.style.transition = 'opacity 0.3s ease';
-  
-  c.appendChild(img);
-  document.body.appendChild(c);
-  _imageContainer = c;
-  return c;
-}
-
-function ensureContainer() {
-  if (_container) return _container;
-  const c = document.createElement('div');
-  c.id = 'interactionContainer';
-  c.style.position = 'absolute';
-  c.style.top = '0';
-  c.style.left = '0';
-  c.style.width = '100%';
-  c.style.height = '100%';
-  c.style.pointerEvents = 'none';
-  document.body.appendChild(c);
-  _container = c;
-  return c;
-}
-
-function createHint(name) {
-  if (_hints[name]) return _hints[name];
-  const c = ensureContainer();
-  const el = document.createElement('div');
-  el.className = 'interaction-hint';
-  el.textContent = 'E';
-  el.style.position = 'absolute';
-  el.style.display = 'none';
-  el.style.pointerEvents = 'none';
-  el.style.fontSize = '24px';
-  el.style.color = 'white';
-  el.style.fontWeight = 'bold';
-  el.style.textShadow = '2px 2px 4px rgba(0,0,0,0.7)';
-  el.style.zIndex = '1000';
-  el.style.userSelect = 'none';
-  c.appendChild(el);
-  _hints[name] = el;
-  return el;
-}
-
-function getModelTopY(obj) {
-  // compute bounding box of object to estimate top Y
-  try {
-    const box = new THREE.Box3().setFromObject(obj);
-    return box.max.y;
-  } catch (e) {
-    return obj.position.y + 1.6;
-  }
-}
-
-export function setupInteraction(options) {
-  // Limpiar completamente el estado anterior
-  disposeInteraction();
-  
-  // Limpiar el contenedor de hints y todos los hints existentes
-  if (_container) {
-    while (_container.firstChild) {
-      _container.removeChild(_container.firstChild);
-    }
-  }
-  _hints = {};
-  
-  _renderer = options.renderer;
-  _camera = options.camera;
-  _getPlayerPos = options.getPlayerPosition; // function
-  if (options.distance) _interactDistance = options.distance;
-
-  function showImage() {
-    const container = createImageOverlay();
-    container.style.display = 'block';
-  }
-
-  function hideImage() {
-    if (_imageContainer) {
-      _imageContainer.style.display = 'none';
-    }
-  }
-
-  let isShowingImage = false;
-  let isKeyDown = false;
-
-  _keyHandler = function(e) {
-    if (e.code !== 'KeyE') return;
-    if (isKeyDown) return; // prevent repeat events
-    isKeyDown = true;
-
-    const playerPos = _getPlayerPos && _getPlayerPos();
-    if (!playerPos) return;
-    const playerVec = (playerPos.position && playerPos.position.isVector3) ? playerPos.position : (playerPos.isVector3 ? playerPos : (playerPos.position || null));
-    if (!playerVec) return;
-
-    let nearest = null;
-    let nd = Infinity;
-    Object.keys(window.characters || {}).forEach((k) => {
-      const obj = window.characters[k];
-      if (!obj) return;
-      const d = playerVec.distanceTo(obj.position);
-      if (d < nd) { nd = d; nearest = { k, obj, d }; }
-    });
-
-    if (nearest && nd <= _interactDistance && nearest.k === 'me' && !isShowingImage) {
-      showImage();
-      isShowingImage = true;
-    }
-  };
-
-  _keyUpHandler = function(e) {
-    if (e.code === 'KeyE') {
-      isKeyDown = false;
-      // Ya no ocultamos la imagen al soltar E
-    }
-  };
-
-  _escHandler = function(e) {
-    // Solo procesar el evento si viene del juego
-    if (!_renderer || !_camera) return;
-    
-    if (e.code === 'Escape') {
-      if (isShowingImage) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        hideImage();
-        isShowingImage = false;
-        return false;
-      }
-    }
-  };
-
-  // Retrasar la adición de los listeners para asegurar que el menú inicial esté completamente cargado
-  setTimeout(() => {
-    document.addEventListener('keydown', _escHandler, true);
-    document.addEventListener('keydown', _keyHandler);
-    document.addEventListener('keyup', _keyUpHandler);
-  }, 100);
-
-  // Modifica showImage y hideImage para usar transiciones
-  function showImage() {
-    const container = createImageOverlay();
-    container.style.display = 'block';
-    // Forzar reflow
-    container.offsetHeight;
-    container.style.opacity = '1';
-  }
-
-  function hideImage() {
-    if (_imageContainer) {
-      _imageContainer.style.opacity = '0';
-      setTimeout(() => {
-        _imageContainer.style.display = 'none';
-      }, 300);
-    }
-  }
-
-  // Exponer checkDistance para llamarlo en cada frame
-  window.checkInteractionDistance = checkDistance;
-}
-
-export function updateHints() {
-  if (!_renderer || !_camera) return;
-  
-  const chars = window.characters || {};
-  const canvas = _renderer.domElement;
-  const rect = canvas.getBoundingClientRect();
-  const width = rect.width;
-  const height = rect.height;
-  const offsetLeft = rect.left + window.scrollX;
-  const offsetTop = rect.top + window.scrollY;
-  const playerPos = _getPlayerPos && _getPlayerPos();
-  const playerVec = (playerPos && playerPos.position && playerPos.position.isVector3) ? playerPos.position : (playerPos && playerPos.isVector3 ? playerPos : (playerPos && playerPos.position ? playerPos.position : null));
-
-  Object.keys(chars).forEach((key) => {
-    const obj = chars[key];
-    if (!obj) return;
-    const hint = createHint(key);
-    if (!playerVec) return;
-    
-    // Calcular distancia en el plano XZ
-    const dx = playerVec.x - obj.position.x;
-    const dz = playerVec.z - obj.position.z;
-    const d = Math.sqrt(dx * dx + dz * dz);
-    
-    // Lógica específica para cada personaje
-    if (key === 'zorrito') {
-      // El placeholder del zorrito será siempre visible dentro del rango
-      hint.style.display = d <= _interactDistance ? 'block' : 'none';
-      if (hint.style.display === 'block') {
-        // Asegurar que el hint del zorrito sea más visible
-        hint.style.zIndex = '1000';
-      }
-    } else if (key === 'me') {
-      // Para el personaje "me", usar la lógica original
-      hint.style.display = d <= _interactDistance ? 'block' : 'none';
-    }
-    
-    if (hint.style.display === 'block') {
-      const worldPos = new THREE.Vector3();
-      obj.getWorldPosition(worldPos);
-      
-      // Aplicar offsets específicos por personaje
-      if (obj.userData && obj.userData.hintOffset) {
-        const ho = obj.userData.hintOffset;
-        if (typeof ho === 'object') {
-          worldPos.x += Number(ho.x) || 0;
-          worldPos.y += Number(ho.y) || 0;
-          worldPos.z += Number(ho.z) || 0;
-        }
-      }
-      
-      const proj = worldPos.project(_camera);
-      const x = offsetLeft + (proj.x * 0.5 + 0.5) * width;
-      const y = offsetTop + (-proj.y * 0.5 + 0.5) * height;
-      
-      hint.style.left = `${Math.round(x)}px`;
-      hint.style.top = `${Math.round(y)}px`;
-      hint.style.transform = 'translate(-50%, -140%)';
-    }
-
-    // Usar la posición fija del objeto para el hint
-    const worldPos = new THREE.Vector3();
-    obj.getWorldPosition(worldPos);
-    
-    // Aplicar el offset guardado en userData
-    if (obj && obj.userData && obj.userData.hintOffset !== undefined) {
-      const ho = obj.userData.hintOffset;
-      if (typeof ho === 'number') {
-        worldPos.y += ho;
-      } else if (ho && typeof ho === 'object') {
-        worldPos.x += Number(ho.x) || 0;
-        worldPos.y += Number(ho.y) || 0;
-        worldPos.z += Number(ho.z) || 0;
-      }
-    }
-
-    // Proyectar la posición del mundo a la pantalla
-    const proj = worldPos.project(_camera);
-    
-    // Convertir a coordenadas de pantalla
-    const x = offsetLeft + (proj.x * 0.5 + 0.5) * width;
-    const y = offsetTop + (-proj.y * 0.5 + 0.5) * height;
-    
-    // Mantener el estilo original
-    hint.style.left = `${Math.round(x)}px`;
-    hint.style.top = `${Math.round(y)}px`;
-    hint.style.transform = 'translate(-50%, -140%)';
-    hint.style.display = 'block';
-  });
-}
-
-export function registerInteractionCallback(name, fn) {
-  _callbacks[name] = fn;
-}
+// ---------------- Interaction Management ----------------
+// Funciones de utilidad para manejar offsets de hints (mantenidas por compatibilidad)
 
 export function setHintOffset(name, xOrObj, y, z) {
   // Usage:
@@ -382,37 +99,4 @@ export function getHintOffset(name) {
     if (!obj) return null;
     return obj.userData && obj.userData.hintOffset ? obj.userData.hintOffset : null;
   } catch (e) { return null; }
-}
-
-export function disposeInteraction() {
-  try { 
-    document.removeEventListener('keydown', _keyHandler); 
-    document.removeEventListener('keyup', _keyUpHandler);
-    document.removeEventListener('keydown', _escHandler, true);
-    
-    if (_container && _container.parentNode) {
-      _container.parentNode.removeChild(_container);
-    }
-    if (_imageContainer && _imageContainer.parentNode) {
-      _imageContainer.parentNode.removeChild(_imageContainer);
-    }
-    
-    // Reset all state variables
-    _keyHandler = null;
-    _keyUpHandler = null;
-    _escHandler = null;
-    isShowingImage = false;
-    isKeyDown = false;
-  } catch(e){
-    console.error('Error cleaning up interaction:', e);
-  }
-  try {
-    if (_imageContainer && _imageContainer.parentNode) _imageContainer.parentNode.removeChild(_imageContainer);
-  } catch(e){}
-  _container = null;
-  _imageContainer = null;
-  _hints = {};
-  _renderer = null;
-  _camera = null;
-  _getPlayerPos = null;
 }

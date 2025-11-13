@@ -1,7 +1,11 @@
+// main.js
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Fireflies } from './fireflies.js';
-import { loadCharacters, setupInteraction, updateHints, disposeInteraction, registerInteractionCallback } from './CharactersManager.js';
+import { loadCharacters } from './CharactersManager.js';
+import { loadHouse, setupHouseEscape, disposeHouse } from './HouseManager.js';
+import { loadPortal } from './PortalManager.js'; // ← NUEVO (para portal.glb y cubo)
+import { setupPlaceholders, updatePlaceholders, disposePlaceholders } from './Placeholders.js';
 
 // === ESCENA ===
 const scene = new THREE.Scene();
@@ -32,31 +36,6 @@ light.castShadow = true;
 scene.add(light);
 scene.add(new THREE.AmbientLight(0x404040, 1.2));
 
-// Cargar personajes (se añaden a la escena dentro del gestor)
-
-// Once characters are loaded we want the CharactersManager to handle
-// interaction hints and the 'E' key. We'll initialize it here and
-// provide a getter for the player's position (penguin).
-loadCharacters(scene).then((chars) => {
-  window.characters = chars;
-  try {
-    // pass the penguin.position (Vector3) so the manager can compute distances
-    setupInteraction({ renderer, camera, getPlayerPosition: () => (penguin ? penguin.position : null), distance: 2.0 });
-    // Example: register per-character callback if you want specific behavior
-    registerInteractionCallback('me', ({ k, obj, d }) => { console.log('Interacted with', k); });
-  } catch(e) { console.warn('setupInteraction failed', e); }
-  // Add characters to the world's collidable meshes so the player collides with them
-  try {
-    Object.keys(chars).forEach((k) => {
-      const obj = chars[k];
-      if (!obj) return;
-      // push the root object so intersectObjects(..., true) checks its meshes
-      collidableMeshes.push(obj);
-    });
-    console.log('✅ Personajes añadidos a collidableMeshes:', collidableMeshes.length);
-  } catch(e) { console.warn('no se pudo añadir personajes a collidableMeshes', e); }
-}).catch(err => console.warn('Error cargando personajes:', err));
-
 // === FÍSICA ===
 const gravity = -0.03;
 let velocityY = 0;
@@ -73,7 +52,7 @@ const SLOPE_Y_THRESHOLD = 0.7;
 
 let penguinRotationOverride = null;
 let penguin;
-const startPosition = new THREE.Vector3(0, 3, 0);
+const startPosition = new THREE.Vector3(0, 5, 0);
 
 // === CARGA ESCENARIO ===
 const loader = new GLTFLoader();
@@ -97,7 +76,6 @@ loader.load('./assets/glb/Low_Poly_Forest.glb', (gltf) => {
   });
   terrain.position.set(0, 0, 0);
   scene.add(terrain);
-  // Agregar las luciérnagas después de cargar el terreno
   new Fireflies(scene);
 }, undefined, (error) => console.error('Error al cargar escenario:', error));
 
@@ -113,13 +91,46 @@ loader.load('./assets/glb/Pinguinomagico.glb', (gltf) => {
   scene.add(penguin);
 }, undefined, (error) => console.error('Error al cargar pingüino:', error));
 
+// === CARGAR PERSONAJES, CASA Y PORTAL ===
+Promise.all([
+  loadCharacters(scene),
+  loadHouse(scene),
+  loadPortal(scene)  // ← NUEVO
+]).then(([chars, houses, portals]) => {
+  window.characters = chars;
+  window.houses = houses;
+
+  try {
+    setupPlaceholders({ 
+      scene,
+      camera, 
+      getPlayerPosition: () => (penguin ? penguin.position : null), 
+      distance: 1.8
+    });
+  } catch(e) { console.warn('setupPlaceholders failed', e); }
+
+  // Añadir personajes y casa a colisiones
+  try {
+    Object.keys(chars).forEach((k) => {
+      const obj = chars[k];
+      if (!obj) return;
+      collidableMeshes.push(obj);
+    });
+    if (houses.casa) {
+      collidableMeshes.push(houses.casa);
+      console.log('Casa añadida a collidableMeshes');
+    }
+  } catch(e) { console.warn('Error añadiendo a collidableMeshes', e); }
+
+  setupHouseEscape();
+}).catch(err => console.warn('Error cargando assets:', err));
+
 // === CONTROLES ===
 const keys = {};
 let velocity = new THREE.Vector3();
 const walkSpeed = 0.04;
 const runSpeed = 0.07;
 
-// Handlers are named so we can remove them on destroy
 function keydownHandler(e) { keys[e.code] = true; }
 function keyupHandler(e) { keys[e.code] = false; }
 document.addEventListener('keydown', keydownHandler);
@@ -141,7 +152,24 @@ function mousemoveHandler(event) {
 document.body.addEventListener('click', bodyClickHandler);
 document.addEventListener('pointerlockchange', pointerlockchangeHandler);
 document.addEventListener('mousemove', mousemoveHandler);
+// === CLICK EN CUBO PARA REDIRIGIR ===
+const mouse = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+function onMouseClick(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(scene.children, true);
+
+  for (let i = 0; i < intersects.length; i++) {
+    if (intersects[i].object.name === 'PortalCube') {
+      window.location.href = 'https://youtu.be/haf67eKF0uo?si=Yrz8jkuZ96VV_i6A'; // ← CAMBIA TU LINK
+      break;
+    }
+  }
+}
+renderer.domElement.addEventListener('click', onMouseClick, false);
 // === RAYCASTERS ===
 const downRay = new THREE.Raycaster();
 const forwardRay = new THREE.Raycaster();
@@ -153,10 +181,8 @@ function getWorldNormal(hit) {
 
 // === ANIMATE ===
 function animate() {
-  // store the RAF id so we can cancel when destroying
   window.gameAnimId = requestAnimationFrame(animate);
 
-  // Si el juego está pausado, dibujamos el frame actual y no actualizamos la lógica
   if (window.gamePaused) {
     renderer.render(scene, camera);
     return;
@@ -173,13 +199,11 @@ function animate() {
     if(velocity.length() > 0) velocity.normalize();
     const currentSpeed = keys['ShiftLeft'] ? runSpeed : walkSpeed;
 
-    // Altura suelo
     downRay.set(penguin.position.clone().add(new THREE.Vector3(0,0.6,0)), new THREE.Vector3(0,-1,0));
     const groundHits = downRay.intersectObject(terrain, true);
     let groundY = -Infinity;
     if (groundHits.length > 0) groundY = groundHits[0].point.y;
 
-    // Colisión frontal
     let canMove = true;
     if(velocity.length() > 0) {
       const direction = velocity.clone().normalize();
@@ -206,7 +230,6 @@ function animate() {
     if(canMove) penguin.position.addScaledVector(velocity,currentSpeed);
     if(velocity.length()>0) penguin.rotation.y = yaw + THREE.MathUtils.degToRad(90);
 
-    // Gravedad
     velocityY += gravity;
     const downHitsForStep = downRay.intersectObject(terrain,true);
     if(downHitsForStep.length>0){
@@ -218,7 +241,6 @@ function animate() {
     penguin.position.y += velocityY;
     if(penguin.position.y<-10){ penguin.position.copy(startPosition); velocityY=0; }
 
-    // Cámara sigue
     const cameraOffset = new THREE.Vector3(0,0.6,1.4);
     const offsetRotated = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
     const cameraTarget = penguin.position.clone().add(offsetRotated);
@@ -226,37 +248,29 @@ function animate() {
     camera.lookAt(penguin.position.clone().add(new THREE.Vector3(0,0.4,0)));
   }
 
-  // update interaction hints
-  try { 
-    updateHints();
-  } catch(e) {}
+  try { updatePlaceholders(); } catch(e) {}
 
   renderer.render(scene,camera);
 }
 animate();
 
-
 // === CLEANUP / DESTROY ===
-// Expose a destroy function to stop the loop and free GL resources
 window.destroyGame = function destroyGame() {
-  try {
-    if (window.gameAnimId) cancelAnimationFrame(window.gameAnimId);
-  } catch (e) { /* ignore */ }
+  try { if (window.gameAnimId) cancelAnimationFrame(window.gameAnimId); } catch (e) {}
 
-  // Remove event listeners
   try { document.removeEventListener('keydown', keydownHandler); } catch(e){}
   try { document.removeEventListener('keyup', keyupHandler); } catch(e){}
   try { document.body.removeEventListener('click', bodyClickHandler); } catch(e){}
   try { document.removeEventListener('pointerlockchange', pointerlockchangeHandler); } catch(e){}
   try { document.removeEventListener('mousemove', mousemoveHandler); } catch(e){}
   try { window.removeEventListener('resize', resizeHandler); } catch(e){}
-  // dispose interaction helpers (hints + key handler)
-  try { disposeInteraction(); } catch(e){}
 
-  // Stop any music related to the game
+  try { disposePlaceholders(); } catch(e){}
+  try { disposeHouse(); } catch(e){}
+  try { disposePortalCube(); } catch(e){}  // ← LIMPIEZA DEL CUBO
+
   try { if (window.musicManager && window.musicManager.gameMusic) { window.musicManager.gameMusic.pause(); } } catch(e){}
 
-  // Dispose three.js objects
   try {
     scene.traverse((obj) => {
       if (obj.isMesh) {
@@ -271,15 +285,12 @@ window.destroyGame = function destroyGame() {
 
   try {
     renderer.dispose();
-    // remove canvas from DOM
     if (renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
   } catch(e) { console.warn('error disposing renderer', e); }
 
-  // Clear references
-  try { window.gameAnimId = null; } catch(e){}
+  window.gameAnimId = null;
   window.gameDestroyed = true;
-  // interaction cleanup handled by disposeInteraction()
-  console.log('🧹 Juego destruido y recursos liberados');
+  console.log('Juego destruido y recursos liberados');
 };
 
 // === AJUSTE VENTANA ===
