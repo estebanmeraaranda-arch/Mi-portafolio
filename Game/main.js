@@ -108,7 +108,7 @@ Promise.all([
       houses.casa.userData = houses.casa.userData || {};
       if (houses.casa.userData.hintOffset === undefined) {
         // Modifica esta posición a tu gusto para mover el botón de la casa
-        houses.casa.userData.hintOffset = { x: 0, y: 1.4, z: 0 };
+        houses.casa.userData.hintOffset = { x: -3, y: 5, z: 1 };
       }
       if (houses.casa.userData.hintDistance === undefined) {
         houses.casa.userData.hintDistance = 1.8;

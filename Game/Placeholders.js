@@ -1,5 +1,5 @@
 // Placeholders.js
-// Maneja los placeholders como sprites 3D en el espacio del mundo
+// Control de los indicadores "E" e imágenes overlay para cada personaje/lugar
 import * as THREE from 'three';
 
 let _scene = null;
@@ -20,57 +20,94 @@ const _pulseStates = {};
 
 let _lastTime = performance.now();
 
-/* -----------------------
-   Overlays (sin cambios)
-   ----------------------- */
+/* --------------------------------------------------------------------------
+   🧍 PLACEHOLDER 1 — YO (imagen YOGAME.PNG)
+-------------------------------------------------------------------------- */
 function createImageOverlay() {
   if (_imageContainer) return _imageContainer;
+
   const c = document.createElement('div');
   c.id = 'yogameContainer';
   c.style.position = 'fixed';
-  c.style.top = '50%';
-  c.style.left = '50%';
-  c.style.transform = 'translate(-50%, -50%)';
+  c.style.top = '0';
+  c.style.left = '0';
+  c.style.width = '100%';
+  c.style.height = '100%';
   c.style.display = 'none';
   c.style.zIndex = '1000';
   c.style.opacity = '0';
   c.style.transition = 'opacity 0.3s ease';
- 
+  c.style.pointerEvents = 'auto';
+  c.style.alignItems = 'center';
+  c.style.justifyContent = 'center';
+  c.style.background = 'rgba(0,0,0,0.6)';
+
+  const wrapper = document.createElement('div');
+  wrapper.style.maxWidth = '90vw';
+  wrapper.style.maxHeight = '90vh';
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.justifyContent = 'center';
+
   const img = document.createElement('img');
-  img.src = './assets/img/YO.png';
+  img.src = './assets/img/YOGAME.png';
+  img.alt = 'YO';
   img.style.display = 'block';
-  img.style.width = '800px';
-  img.style.height = 'auto';
+  img.style.width = 'auto';
+  img.style.height = '80vh';
+  img.style.maxWidth = '95%';
+  img.style.objectFit = 'contain';
   img.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-  img.style.transform = 'scale(1)';
-  img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.03)'; img.style.opacity = '0.95'; });
-  img.addEventListener('mouseleave', () => { img.style.transform = 'scale(1)'; img.style.opacity = '1'; });
- 
-  c.appendChild(img);
+
+  img.addEventListener('mouseenter', () => {
+    img.style.transform = 'scale(1.03)';
+    img.style.opacity = '0.95';
+  });
+  img.addEventListener('mouseleave', () => {
+    img.style.transform = 'scale(1)';
+    img.style.opacity = '1';
+  });
+
+  img.addEventListener('error', () => {
+    console.warn('⚠️ No se pudo cargar ./assets/img/YOGAME.png');
+    img.style.display = 'none';
+    const t = document.createElement('div');
+    t.textContent = 'Imagen no encontrada';
+    t.style.color = '#fff';
+    t.style.fontSize = '18px';
+    t.style.padding = '12px';
+    wrapper.appendChild(t);
+  });
+
+  c.addEventListener('click', (ev) => {
+    if (ev.target === c) hideImage();
+  });
+
+  wrapper.appendChild(img);
+  c.appendChild(wrapper);
   document.body.appendChild(c);
   _imageContainer = c;
   return c;
 }
 
 function showImage() {
-  const container = createImageOverlay();
-  container.style.display = 'block';
-  container.offsetHeight;
-  container.style.opacity = '1';
+  const c = createImageOverlay();
+  c.style.display = 'flex';
+  c.offsetHeight;
+  c.style.opacity = '1';
 }
-
 function hideImage() {
   if (_imageContainer) {
     _imageContainer.style.opacity = '0';
-    setTimeout(() => {
-      _imageContainer.style.display = 'none';
-    }, 300);
+    setTimeout(() => (_imageContainer.style.display = 'none'), 300);
   }
 }
-
+/* --------------------------------------------------------------------------
+   🦊 PLACEHOLDER 2 — ZORRITO (izquierda/centro unidos, derecha independiente)
+-------------------------------------------------------------------------- */
 function createZorritoImageOverlay() {
   if (_zorritoImageContainer) return _zorritoImageContainer;
- 
+
   const c = document.createElement('div');
   c.id = 'zorritoImagesContainer';
   c.style.position = 'fixed';
@@ -83,61 +120,108 @@ function createZorritoImageOverlay() {
   c.style.opacity = '0';
   c.style.transition = 'opacity 0.3s ease';
   c.style.pointerEvents = 'auto';
- 
-  const imagesWrapper = document.createElement('div');
-  imagesWrapper.style.position = 'relative';
-  imagesWrapper.style.width = '100%';
-  imagesWrapper.style.height = '100%';
-  imagesWrapper.style.display = 'flex';
-  imagesWrapper.style.alignItems = 'center';
-  imagesWrapper.style.justifyContent = 'center';
-  imagesWrapper.style.gap = '20px';
- 
-  const imgLeft = document.createElement('img');
-  imgLeft.src = './assets/img/izquierda.png';
-  imgLeft.style.width = 'auto';
-  imgLeft.style.height = '80vh';
-  imgLeft.style.maxWidth = '30%';
-  imgLeft.style.objectFit = 'contain';
-  imgLeft.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-  imgLeft.addEventListener('mouseenter', () => { imgLeft.style.transform = 'scale(1.04)'; imgLeft.style.opacity = '0.95'; });
-  imgLeft.addEventListener('mouseleave', () => { imgLeft.style.transform = 'scale(1)'; imgLeft.style.opacity = '1'; });
- 
-  const imgCenter = document.createElement('img');
-  imgCenter.src = './assets/img/centro.png';
-  imgCenter.style.width = 'auto';
-  imgCenter.style.height = '80vh';
-  imgCenter.style.maxWidth = '30%';
-  imgCenter.style.objectFit = 'contain';
-  imgCenter.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-  imgCenter.addEventListener('mouseenter', () => { imgCenter.style.transform = 'scale(1.04)'; imgCenter.style.opacity = '0.95'; });
-  imgCenter.addEventListener('mouseleave', () => { imgCenter.style.transform = 'scale(1)'; imgCenter.style.opacity = '1'; });
- 
-  const imgRight = document.createElement('img');
-  imgRight.src = './assets/img/derecha.png';
-  imgRight.style.width = 'auto';
-  imgRight.style.height = '80vh';
-  imgRight.style.maxWidth = '30%';
-  imgRight.style.objectFit = 'contain';
-  imgRight.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-  imgRight.addEventListener('mouseenter', () => { imgRight.style.transform = 'scale(1.04)'; imgRight.style.opacity = '0.95'; });
-  imgRight.addEventListener('mouseleave', () => { imgRight.style.transform = 'scale(1)'; imgRight.style.opacity = '1'; });
- 
-  imagesWrapper.appendChild(imgLeft);
-  imagesWrapper.appendChild(imgCenter);
-  imagesWrapper.appendChild(imgRight);
-  c.appendChild(imagesWrapper);
+  c.style.alignItems = 'center';
+  c.style.justifyContent = 'center';
+  c.style.background = 'rgba(0,0,0,0.6)';
+
+  // Contenedor principal: dos columnas
+  //  - leftCol: contiene las dos imágenes (izquierda + centro) con la misma altura (80vh)
+  //  - rightCol: contiene la imagen derecha con tamaño independiente (60vh)
+  const mainWrapper = document.createElement('div');
+  mainWrapper.style.display = 'flex';
+  mainWrapper.style.alignItems = 'center';
+  mainWrapper.style.justifyContent = 'center';
+  mainWrapper.style.gap = '24px';
+  mainWrapper.style.maxWidth = '95vw';
+  mainWrapper.style.height = '80vh';
+  mainWrapper.style.margin = 'auto';
+  mainWrapper.style.boxSizing = 'border-box';
+
+  // LEFT COLUMN: dos imágenes iguales (izquierda + centro)
+  const leftCol = document.createElement('div');
+  leftCol.style.display = 'flex';
+  leftCol.style.flexDirection = 'row';
+  leftCol.style.gap = '16px';
+  leftCol.style.flex = '1 1 60%';
+  leftCol.style.alignItems = 'center';
+  leftCol.style.justifyContent = 'center';
+  leftCol.style.height = '100%';
+
+  const leftPaths = [
+    './assets/img/izquierda.png',
+    './assets/img/centro.png'
+  ];
+  for (const path of leftPaths) {
+    const imgWrapper = document.createElement('div');
+    imgWrapper.style.flex = '1';
+    imgWrapper.style.display = 'flex';
+    imgWrapper.style.alignItems = 'center';
+    imgWrapper.style.justifyContent = 'center';
+    imgWrapper.style.height = '100%';
+    imgWrapper.style.boxSizing = 'border-box';
+
+    const img = document.createElement('img');
+    img.src = path;
+    img.style.display = 'block';
+    img.style.height = '100%';    // ambas tendrán la misma altura (80vh del mainWrapper)
+    img.style.width = 'auto';
+    img.style.maxWidth = '100%';
+    img.style.objectFit = 'contain';
+    img.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+    img.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.45))';
+
+    img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.03)'; img.style.opacity = '0.95'; });
+    img.addEventListener('mouseleave', () => { img.style.transform = 'scale(1)'; img.style.opacity = '1'; });
+
+    imgWrapper.appendChild(img);
+    leftCol.appendChild(imgWrapper);
+  }
+
+  // RIGHT COLUMN: imagen independiente (DERECHA.PNG) con su propio tamaño
+  const rightCol = document.createElement('div');
+  rightCol.style.display = 'flex';
+  rightCol.style.flex = '0 0 32%'; // ocupa ~32% del ancho; ajusta si quieres
+  rightCol.style.alignItems = 'center';
+  rightCol.style.justifyContent = 'center';
+  rightCol.style.height = '100%';
+
+  const rightImg = document.createElement('img');
+  rightImg.src = './assets/img/DERECHA.PNG';
+  rightImg.style.display = 'block';
+  rightImg.style.height = '120vh';   // <- TAMAÑO INDEPENDIENTE: cambia este valor si quieres
+  rightImg.style.width = 'auto';
+  rightImg.style.maxWidth = '100%';
+  rightImg.style.objectFit = 'contain';
+  rightImg.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+  rightImg.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.45))';
+
+  rightImg.addEventListener('mouseenter', () => { rightImg.style.transform = 'scale(1.03)'; rightImg.style.opacity = '0.95'; });
+  rightImg.addEventListener('mouseleave', () => { rightImg.style.transform = 'scale(1)'; rightImg.style.opacity = '1'; });
+
+  rightCol.appendChild(rightImg);
+
+  // Ensamblar
+  mainWrapper.appendChild(leftCol);
+  mainWrapper.appendChild(rightCol);
+  c.appendChild(mainWrapper);
+
+  // Click fuera para cerrar
+  c.addEventListener('click', (ev) => {
+    if (ev.target === c) hideZorritoImages();
+  });
+
   document.body.appendChild(c);
- 
   _zorritoImageContainer = c;
   return c;
 }
 
 function showZorritoImages() {
-  const container = createZorritoImageOverlay();
-  container.style.display = 'block';
-  container.offsetHeight;
-  container.style.opacity = '1';
+  const c = createZorritoImageOverlay();
+  c.style.display = 'flex';
+  // fuerza reflow para transición
+  // eslint-disable-next-line no-unused-expressions
+  c.offsetHeight;
+  c.style.opacity = '1';
 }
 
 function hideZorritoImages() {
@@ -149,62 +233,75 @@ function hideZorritoImages() {
   }
 }
 
-// -------- Overlay ESTUDIO (para la casa) --------
+
+/* --------------------------------------------------------------------------
+   🏠 PLACEHOLDER 3 — CASA (imagen ESTUDIO.PNG)
+-------------------------------------------------------------------------- */
 function createStudyOverlay() {
   if (_studyImageContainer) return _studyImageContainer;
+
   const c = document.createElement('div');
   c.id = 'studyImageContainer';
   c.style.position = 'fixed';
-  c.style.top = '50%';
-  c.style.left = '50%';
-  c.style.transform = 'translate(-50%, -50%)';
+  c.style.top = '0';
+  c.style.left = '0';
+  c.style.width = '100%';
+  c.style.height = '100%';
   c.style.display = 'none';
   c.style.zIndex = '1000';
   c.style.opacity = '0';
   c.style.transition = 'opacity 0.3s ease';
   c.style.pointerEvents = 'auto';
+  c.style.alignItems = 'center';
+  c.style.justifyContent = 'center';
+  c.style.background = 'rgba(0,0,0,0.6)';
+
+  const wrapper = document.createElement('div');
+  wrapper.style.maxWidth = '90vw';
+  wrapper.style.maxHeight = '90vh';
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.justifyContent = 'center';
 
   const img = document.createElement('img');
-  img.src = './assets/img/ESTUDIO.png';
-  img.style.display = 'block';
-  img.style.width = '900px';
-  img.style.height = 'auto';
+  img.src = './assets/img/ESTUDIO.PNG';
+  img.alt = 'ESTUDIO';
+  img.style.height = '80vh';
+  img.style.objectFit = 'contain';
   img.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-  img.style.transform = 'scale(1)';
   img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.03)'; img.style.opacity = '0.95'; });
   img.addEventListener('mouseleave', () => { img.style.transform = 'scale(1)'; img.style.opacity = '1'; });
 
-  c.appendChild(img);
+  c.addEventListener('click', (ev) => {
+    if (ev.target === c) hideStudyImage();
+  });
+
+  wrapper.appendChild(img);
+  c.appendChild(wrapper);
   document.body.appendChild(c);
   _studyImageContainer = c;
   return c;
 }
 
 function showStudyImage() {
-  const container = createStudyOverlay();
-  container.style.display = 'block';
-  container.offsetHeight;
-  container.style.opacity = '1';
+  const c = createStudyOverlay();
+  c.style.display = 'flex';
+  c.offsetHeight;
+  c.style.opacity = '1';
 }
-
 function hideStudyImage() {
   if (_studyImageContainer) {
     _studyImageContainer.style.opacity = '0';
-    setTimeout(() => {
-      _studyImageContainer.style.display = 'none';
-    }, 300);
+    setTimeout(() => (_studyImageContainer.style.display = 'none'), 300);
   }
 }
 
-/* --------------------------------------
-   Funciones para crear placeholders E
-   -------------------------------------- */
+/* --------------------------------------------------------------------------
+   🔤 SPRITE (E)
+-------------------------------------------------------------------------- */
 function createPlaceholderSprite(imagePath, size = 0.5) {
   const loader = new THREE.TextureLoader();
-  const texture = loader.load(imagePath, undefined, undefined, (err) => {
-    console.warn('Error cargando placeholder:', err);
-  });
- 
+  const texture = loader.load(imagePath);
   const spriteMaterial = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
@@ -212,287 +309,124 @@ function createPlaceholderSprite(imagePath, size = 0.5) {
     depthTest: false,
     depthWrite: false
   });
- 
   const sprite = new THREE.Sprite(spriteMaterial);
   sprite.scale.set(size, size, 1);
-  sprite.userData.isPlaceholder = true;
   sprite.frustumCulled = false;
   sprite.renderOrder = 10000;
- 
-  sprite.userData._zShift = 0.001;
-  sprite.onBeforeRender = function () {
-    if (!this.userData._zShiftApplied) {
-      this.position.z += this.userData._zShift;
-      this.userData._zShiftApplied = true;
-    }
-  };
-  sprite.onAfterRender = function () {
-    if (this.userData._zShiftApplied) {
-      this.position.z -= this.userData._zShift;
-      this.userData._zShiftApplied = false;
-    }
-  };
- 
   return sprite;
 }
-
 function createEImagePlaceholder(size = 0.18) {
-  const imagePath = './assets/img/E.png';
-  return createPlaceholderSprite(imagePath, size);
+  return createPlaceholderSprite('./assets/img/E.png', size);
 }
 
-/* --------------------------------------
-   Setup (listeners y lógica KeyE)
-   -------------------------------------- */
-export function setupPlaceholders(options) {
-  _scene = options.scene;
-  _camera = options.camera;
-  _getPlayerPos = options.getPlayerPosition;
-  if (options.distance) _interactDistance = options.distance;
- 
-  _raycaster = new THREE.Raycaster();
-  let isShowingImage = false;
-  let isShowingZorritoImages = false;
-  let isShowingStudyImage = false;
-  let isKeyDown = false;
+/* --------------------------------------------------------------------------
+   ⚙️ SETUP (teclas y eventos)
+-------------------------------------------------------------------------- */
+export function setupPlaceholders({ scene, camera, getPlayerPosition, distance = 1.8 }) {
+  _scene = scene;
+  _camera = camera;
+  _getPlayerPos = getPlayerPosition;
+  _interactDistance = distance;
 
-  _keyHandler = function(e) {
+  _keyHandler = function (e) {
     if (e.code !== 'KeyE') return;
-    if (isKeyDown) return;
-    isKeyDown = true;
     const playerPos = _getPlayerPos && _getPlayerPos();
     if (!playerPos) return;
-    const playerVec = (playerPos.position && playerPos.position.isVector3)
-      ? playerPos.position
-      : (playerPos.isVector3 ? playerPos : (playerPos.position || null));
-    if (!playerVec) return;
+    const p = playerPos.position || playerPos;
+    const chars = window.characters || {};
 
+    // Encontrar personaje más cercano
     let nearest = null;
     let nd = Infinity;
-    Object.keys(window.characters || {}).forEach((k) => {
-      const obj = window.characters[k];
+    Object.keys(chars).forEach((k) => {
+      const obj = chars[k];
       if (!obj) return;
-      const d = playerVec.distanceTo(obj.position);
-      if (d < nd) {
-        nd = d;
-        nearest = { k, obj, d };
-      }
+      const d = p.distanceTo(obj.position);
+      if (d < nd) { nd = d; nearest = { key: k, obj }; }
     });
 
-    if (nearest && nd <= _interactDistance && nearest.k === 'me' && !isShowingImage && !isShowingZorritoImages && !isShowingStudyImage) {
-      showImage();
-      isShowingImage = true;
-    }
-    else if (nearest && nd <= _interactDistance && nearest.k === 'zorrito' && !isShowingZorritoImages && !isShowingImage && !isShowingStudyImage) {
-      showZorritoImages();
-      isShowingZorritoImages = true;
-    }
-    else if (nearest && nd <= _interactDistance && nearest.k === 'casa' && !isShowingStudyImage && !isShowingImage && !isShowingZorritoImages) {
-      showStudyImage();
-      isShowingStudyImage = true;
-    }
+    if (!nearest || nd > _interactDistance) return;
+
+    // Mostrar overlay correspondiente
+    if (nearest.key === 'me') showImage();
+    else if (nearest.key === 'zorrito') showZorritoImages();
+    else if (nearest.key === 'casa') showStudyImage();
   };
 
-  _keyUpHandler = function(e) {
-    if (e.code === 'KeyE') {
-      isKeyDown = false;
-    }
-  };
-
-  _escHandler = function(e) {
-    if (!_scene || !_camera) return;
+  _escHandler = function (e) {
     if (e.code === 'Escape') {
-      if (isShowingImage) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        hideImage();
-        isShowingImage = false;
-        return false;
-      }
-      if (isShowingZorritoImages) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        hideZorritoImages();
-        isShowingZorritoImages = false;
-        return false;
-      }
-      if (isShowingStudyImage) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        hideStudyImage();
-        isShowingStudyImage = false;
-        return false;
-      }
+      hideImage();
+      hideZorritoImages();
+      hideStudyImage();
     }
   };
 
-  setTimeout(() => {
-    document.addEventListener('keydown', _escHandler, true);
-    document.addEventListener('keydown', _keyHandler);
-    document.addEventListener('keyup', _keyUpHandler);
-  }, 100);
+  document.addEventListener('keydown', _keyHandler);
+  document.addEventListener('keydown', _escHandler);
 }
 
-/* --------------------------------------
-   updatePlaceholders (se llama cada frame)
-   -------------------------------------- */
+/* --------------------------------------------------------------------------
+   🔁 UPDATE (animación y posición)
+-------------------------------------------------------------------------- */
 export function updatePlaceholders() {
   if (!_scene || !_camera) return;
- 
-  const now = performance.now();
-  const dt = (now - _lastTime) / 1000;
-  _lastTime = now;
-
-  if (!window.screenManager || window.screenManager.currentScreen !== 2) {
-    Object.keys(_placeholderGroups).forEach((key) => {
-      const g = _placeholderGroups[key];
-      if (g) g.visible = false;
-    });
-    return;
-  }
- 
   const chars = window.characters || {};
   const playerPos = _getPlayerPos && _getPlayerPos();
-  const playerVec = (playerPos && playerPos.position && playerPos.position.isVector3)
-    ? playerPos.position
-    : (playerPos && playerPos.isVector3 ? playerPos : (playerPos && playerPos.position ? playerPos.position : null));
-  if (!playerVec) return;
+  const p = playerPos.position || playerPos;
 
   Object.keys(chars).forEach((key) => {
     const obj = chars[key];
     if (!obj) return;
-   
-    // Distancia real en 3D
     const worldPos = new THREE.Vector3();
     obj.getWorldPosition(worldPos);
-    const distanceToPlayer = playerVec.distanceTo(worldPos);
+    const dist = p.distanceTo(worldPos);
 
-    // Distancia personalizada (si el personaje la define)
-    let characterDistance = _interactDistance;
-    if (obj.userData && obj.userData.hintDistance !== undefined) {
-      characterDistance = Number(obj.userData.hintDistance) || _interactDistance;
-    }
+    const limit = obj.userData?.hintDistance ?? _interactDistance;
+    const show = dist <= limit;
 
-    const shouldShow = distanceToPlayer <= characterDistance;
-
-    if (shouldShow) {
-      // Asegurar grupo / sprite
+    if (show) {
       if (!_placeholderGroups[key]) {
-        const group = new THREE.Group();
-        const spriteSize = obj.userData && obj.userData.hintSpriteSize ? Number(obj.userData.hintSpriteSize) : 0.18;
-        const sprite = createEImagePlaceholder(spriteSize);
-
-        if (key === 'zorrito') {
-          sprite.scale.set(0.3, 0.3, 1);
-        }
-
-        group.add(sprite);
-        group.frustumCulled = false;
-        group.renderOrder = 10000;
-        _placeholderGroups[key] = group;
-        _placeholderSprites[key] = sprite;
-        _pulseStates[key] = { phase: Math.random() * Math.PI * 2 };
-        _scene.add(group);
+        const g = new THREE.Group();
+        const s = createEImagePlaceholder(obj.userData?.hintSpriteSize ?? 0.18);
+        g.add(s);
+        _scene.add(g);
+        _placeholderGroups[key] = g;
+        _placeholderSprites[key] = s;
       }
 
-      const group = _placeholderGroups[key];
-      const sprite = _placeholderSprites[key];
+      const g = _placeholderGroups[key];
+      const s = _placeholderSprites[key];
+      g.visible = true;
 
-      if (!group.parent) _scene.add(group);
-      group.visible = true;
-      sprite.visible = true;
-
-      // Posicionamiento con offset
-      const finalPos = worldPos.clone();
-      if (obj.userData && obj.userData.hintOffset) {
-        const ho = obj.userData.hintOffset;
-        if (typeof ho === 'object' && ho !== null) {
-          finalPos.x += Number(ho.x) || 0;
-          finalPos.y += Number(ho.y) || 0;
-          finalPos.z += Number(ho.z) || 0;
-        } else if (typeof ho === 'number') {
-          finalPos.y += ho;
-        }
+      const pos = worldPos.clone();
+      if (obj.userData?.hintOffset) {
+        const o = obj.userData.hintOffset;
+        pos.x += o.x || 0;
+        pos.y += o.y || 0;
+        pos.z += o.z || 0;
       }
 
-      group.position.lerp(finalPos, 0.25);
-
-      // Billboard
-      try { group.lookAt(_camera.position); } catch (e) {}
-
-      // Escala en función de la distancia para mantener tamaño visual consistente
-      const baseScale = (key === 'zorrito') ? 0.28 : 0.18;
-      const minScale = baseScale * 0.75;
-      const maxScale = baseScale * 1.5;
-      const scale = THREE.MathUtils.clamp(baseScale * (1.0 + 0.3 / Math.max(distanceToPlayer, 0.2)), minScale, maxScale);
-      sprite.scale.set(scale, scale, 1);
-
-      // Pulso (efecto de latido suave)
-      const ps = _pulseStates[key] || { phase: 0 };
-      ps.phase += dt * 4.0;
-      const opacity = 0.8 + 0.2 * Math.sin(ps.phase);
-      if (sprite.material) {
-        sprite.material.opacity = opacity;
-        sprite.material.needsUpdate = true;
-      }
-      _pulseStates[key] = ps;
-    } else {
-      if (_placeholderGroups[key]) {
-        _placeholderGroups[key].visible = false;
-        if (_pulseStates[key]) _pulseStates[key].phase = 0;
-      }
+      g.position.lerp(pos, 0.25);
+      g.lookAt(_camera.position);
+      s.material.opacity = 0.8 + 0.2 * Math.sin(performance.now() * 0.005);
+    } else if (_placeholderGroups[key]) {
+      _placeholderGroups[key].visible = false;
     }
   });
 }
 
-/* --------------------------------------
-   Limpieza / Dispose
-   -------------------------------------- */
+/* --------------------------------------------------------------------------
+   🧹 CLEANUP
+-------------------------------------------------------------------------- */
 export function disposePlaceholders() {
-  try {
-    document.removeEventListener('keydown', _keyHandler);
-    document.removeEventListener('keyup', _keyUpHandler);
-    document.removeEventListener('keydown', _escHandler, true);
-  } catch(e) {}
-
-  try {
-    Object.keys(_placeholderGroups).forEach((key) => {
-      const group = _placeholderGroups[key];
-      if (group && _scene) {
-        _scene.remove(group);
-        group.traverse((child) => {
-          if (child.isSprite && child.material) {
-            if (child.material.map) {
-              try { child.material.map.dispose(); } catch(e) {}
-            }
-            try { child.material.dispose(); } catch(e) {}
-          }
-        });
-      }
-    });
-  } catch(e) {
-    console.error('Error removing placeholder groups:', e);
+  document.removeEventListener('keydown', _keyHandler);
+  document.removeEventListener('keydown', _escHandler);
+  if (_scene) {
+    Object.values(_placeholderGroups).forEach((g) => _scene.remove(g));
   }
-   
-  try {
-    if (_imageContainer && _imageContainer.parentNode) {
-      _imageContainer.parentNode.removeChild(_imageContainer);
-    }
-    if (_zorritoImageContainer && _zorritoImageContainer.parentNode) {
-      _zorritoImageContainer.parentNode.removeChild(_zorritoImageContainer);
-    }
-  } catch(e) {}
-   
-  _keyHandler = null;
-  _keyUpHandler = null;
-  _escHandler = null;
-  _imageContainer = null;
-  _zorritoImageContainer = null;
-  _scene = null;
-  _camera = null;
-  _getPlayerPos = null;
-  _raycaster = null;
-  _placeholderSprites = {};
-  _placeholderGroups = {};
-  Object.keys(_pulseStates).forEach(k => delete _pulseStates[k]);
+  [_imageContainer, _zorritoImageContainer, _studyImageContainer].forEach((el) => {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  });
+  _imageContainer = _zorritoImageContainer = _studyImageContainer = null;
+  _scene = _camera = _getPlayerPos = null;
 }
