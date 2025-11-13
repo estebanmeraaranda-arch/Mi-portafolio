@@ -56,7 +56,7 @@ const startPosition = new THREE.Vector3(0, 5, 0);
 
 // === CARGA ESCENARIO ===
 const loader = new GLTFLoader();
-loader.load('./assets/glb/Low_Poly_Forest.glb', (gltf) => {
+loader.load('./assets/glb/BosqueColor.glb', (gltf) => {
   terrain = gltf.scene;
   terrain.traverse((node) => {
     if (node.isMesh) {
