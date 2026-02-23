@@ -50,7 +50,7 @@ function createImageOverlay() {
   wrapper.style.justifyContent = 'center';
 
   const img = document.createElement('img');
-  img.src = './assets/Img/YOGAME.png';
+  img.src = './assets/img/YOGAME.png';
   img.alt = 'YO';
   img.style.display = 'block';
   img.style.width = 'auto';
@@ -69,7 +69,7 @@ function createImageOverlay() {
   });
 
   img.addEventListener('error', () => {
-    console.warn('⚠️ No se pudo cargar ./assets/Img/YOGAME.png');
+    console.warn('⚠️ No se pudo cargar ./assets/img/YOGAME.png');
     img.style.display = 'none';
     const t = document.createElement('div');
     t.textContent = 'Imagen no encontrada';
@@ -148,8 +148,8 @@ function createZorritoImageOverlay() {
   leftCol.style.height = '100%';
 
   const leftPaths = [
-    './assets/Img/IZQUIERDA.png',
-    './assets/Img/CENTRO.png'
+    './assets/img/IZQUIERDA.png',
+    './assets/img/CENTRO.png'
   ];
   for (const path of leftPaths) {
     const imgWrapper = document.createElement('div');
@@ -186,7 +186,7 @@ function createZorritoImageOverlay() {
   rightCol.style.height = '100%';
 
   const rightImg = document.createElement('img');
-  rightImg.src = './assets/Img/DERECHA.png';
+  rightImg.src = './assets/img/DERECHA.png';
   rightImg.style.display = 'block';
   rightImg.style.height = '120vh';   // <- TAMAÑO INDEPENDIENTE: cambia este valor si quieres
   rightImg.style.width = 'auto';
@@ -264,7 +264,7 @@ function createStudyOverlay() {
   wrapper.style.justifyContent = 'center';
 
   const img = document.createElement('img');
-  img.src = './assets/Img/ESTUDIO.png';
+  img.src = './assets/img/ESTUDIO.png';
   img.alt = 'ESTUDIO';
   img.style.height = '80vh';
   img.style.objectFit = 'contain';
@@ -316,7 +316,7 @@ function createPlaceholderSprite(imagePath, size = 0.5) {
   return sprite;
 }
 function createEImagePlaceholder(size = 0.18) {
-  return createPlaceholderSprite('./assets/Img/E.png', size);
+  return createPlaceholderSprite('./assets/img/E.png', size);
 }
 
 /* --------------------------------------------------------------------------
