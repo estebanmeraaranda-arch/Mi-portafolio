@@ -24,7 +24,7 @@ function createHouseImageOverlay() {
 
   const img = document.createElement('img');
   // Placeholder temporal (cambia por tu imagen real después)
-  img.src = './assets/img/E.png'; 
+  img.src = './assets/Img/E.png'; 
   img.style.display = 'block';
   img.style.width = '800px';
   img.style.height = 'auto';
